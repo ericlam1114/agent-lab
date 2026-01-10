@@ -287,6 +287,119 @@ test.describe('Button Interactions', () => {
 });
 
 // ============================================================================
+// Run Eval Modal Tests
+// ============================================================================
+
+test.describe('Run Eval Modal', () => {
+  test('clicking Run New Eval opens modal', async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.waitForLoadState('networkidle');
+
+    const runButton = page.locator('button:has-text("Run New Eval")');
+    await runButton.click();
+
+    // Modal should appear
+    const modal = page.locator('text=Run New Evaluation');
+    await expect(modal).toBeVisible();
+  });
+
+  test('modal has config input field', async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.waitForLoadState('networkidle');
+
+    await page.locator('button:has-text("Run New Eval")').click();
+
+    // Check for config input
+    const configInput = page.locator('input[placeholder*="agenteval"]');
+    await expect(configInput).toBeVisible();
+    await expect(configInput).toHaveValue('agenteval.yaml');
+  });
+
+  test('modal has Run from Config and CLI Instructions tabs', async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.waitForLoadState('networkidle');
+
+    await page.locator('button:has-text("Run New Eval")').click();
+
+    // Check for tabs
+    const configTab = page.locator('button:has-text("Run from Config")');
+    const cliTab = page.locator('button:has-text("CLI Instructions")');
+
+    await expect(configTab).toBeVisible();
+    await expect(cliTab).toBeVisible();
+  });
+
+  test('clicking CLI Instructions tab shows CLI commands', async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.waitForLoadState('networkidle');
+
+    await page.locator('button:has-text("Run New Eval")').click();
+    await page.locator('button:has-text("CLI Instructions")').click();
+
+    // Check for CLI commands
+    const initCommand = page.locator('text=npx agenteval init');
+    await expect(initCommand).toBeVisible();
+  });
+
+  test('modal can be closed with X button', async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.waitForLoadState('networkidle');
+
+    await page.locator('button:has-text("Run New Eval")').click();
+
+    // Wait for modal to be visible
+    await expect(page.locator('text=Run New Evaluation')).toBeVisible();
+
+    // Click X button (close button in header)
+    const closeButton = page.locator('button svg').first();
+    await closeButton.click();
+
+    // Modal should be closed
+    await expect(page.locator('text=Run New Evaluation')).not.toBeVisible();
+  });
+
+  test('modal can be closed with Close button', async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.waitForLoadState('networkidle');
+
+    await page.locator('button:has-text("Run New Eval")').click();
+
+    // Wait for modal to be visible
+    await expect(page.locator('text=Run New Evaluation')).toBeVisible();
+
+    // Click Close button in footer
+    await page.locator('button:has-text("Close")').click();
+
+    // Modal should be closed
+    await expect(page.locator('text=Run New Evaluation')).not.toBeVisible();
+  });
+
+  test('Run Evaluation button is present and clickable', async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.waitForLoadState('networkidle');
+
+    await page.locator('button:has-text("Run New Eval")').click();
+
+    const runEvalButton = page.locator('button:has-text("Run Evaluation")');
+    await expect(runEvalButton).toBeVisible();
+    await expect(runEvalButton).toBeEnabled();
+  });
+
+  test('config input can be edited', async ({ page }) => {
+    await page.goto(BASE_URL);
+    await page.waitForLoadState('networkidle');
+
+    await page.locator('button:has-text("Run New Eval")').click();
+
+    const configInput = page.locator('input[placeholder*="agenteval"]');
+    await configInput.clear();
+    await configInput.fill('my-custom-config.yaml');
+
+    await expect(configInput).toHaveValue('my-custom-config.yaml');
+  });
+});
+
+// ============================================================================
 // Link Navigation Tests
 // ============================================================================
 
