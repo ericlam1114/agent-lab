@@ -78,3 +78,42 @@
 
 ---
 
+## Task 3: Config Parser - COMPLETED
+
+**Files created:**
+- agent-evals/src/config/schema.ts - Zod schemas for:
+  - AgentConfigSchema (type, endpoint, timeout, headers, retries)
+  - TaskConfigSchema (id, type, description, input, graders)
+  - GraderConfigSchema (type, value, rubric, threshold, etc.)
+  - EvalConfigSchema (name, description, agent, tasks, settings)
+  - TaskInputSchema (messages, prompt, context, environment)
+  - EvalSettingsSchema (trialsPerTask, maxConcurrency, passThreshold)
+- agent-evals/src/config/parser.ts - Parser functions:
+  - parseConfigFile() - Read and validate YAML/JSON config
+  - parseConfigString() - Parse YAML string
+  - validateConfig() - Validate against schema
+  - mergeConfigs() - Merge multiple configs
+  - generateSampleConfig() - Generate starter config
+  - Custom error classes: ConfigError, ConfigValidationError
+- agent-evals/src/config/index.ts - Module exports
+
+**Files modified:**
+- agent-evals/src/index.ts - Added config exports with Parsed* type aliases
+
+**Key decisions:**
+- Zod for schema validation (type-safe, good error messages)
+- Support both YAML and JSON config files
+- Config types prefixed with Parsed* to avoid conflicts with types.ts
+- Custom error classes with formatted error messages
+- Refinements for conditional validation (HTTP needs endpoint, CLI needs command)
+
+**Verification:**
+- npm run build: PASSED
+- npm run lint: PASSED
+
+**Notes for next iteration:**
+- Task 4 implements HTTP provider using AgentConfig
+- Use types from config/schema.ts for validation
+
+---
+
