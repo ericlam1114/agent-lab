@@ -16,8 +16,19 @@ export {
   type StringGraderFn,
 } from './string-match';
 
-// JSON Validator (Task 10)
-// export { ... } from './json-validator';
+// JSON Validator Graders
+export {
+  isValidJson,
+  matchesSchema,
+  hasFields,
+  fieldEquals,
+  createJsonGrader,
+  parseJson,
+  extractJson,
+  getValueAtPath,
+  deepEqual,
+  type JsonGraderConfig,
+} from './json-validator';
 
 // State Checker (Task 11)
 // export { ... } from './state-checker';
