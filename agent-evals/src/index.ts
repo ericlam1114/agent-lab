@@ -62,6 +62,15 @@ export {
   type TaskEvalResult,
   type EvalProgress,
   type ProgressCallback,
+  // Trial Manager
+  TrialManager,
+  createTrialManager,
+  calculatePassAtK,
+  calculatePassToTheK,
+  type TrialManagerConfig,
+  type TrialResult,
+  type TaskTrialResults,
+  type TrialCallback,
 } from './core';
 
 // Graders

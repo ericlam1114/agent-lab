@@ -36,5 +36,14 @@ export {
   type ProgressCallback,
 } from './evaluator';
 
-// Trial Manager (to be implemented)
-// export { TrialManager } from './trial-manager';
+// Trial Manager
+export {
+  TrialManager,
+  createTrialManager,
+  calculatePassAtK,
+  calculatePassToTheK,
+  type TrialManagerConfig,
+  type TrialResult,
+  type TaskTrialResults,
+  type TrialCallback,
+} from './trial-manager';

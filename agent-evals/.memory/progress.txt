@@ -240,3 +240,37 @@
 
 ---
 
+## Task 8: Trial Manager - COMPLETED
+
+**Files created:**
+- agent-evals/src/core/trial-manager.ts - TrialManager class with:
+  - runTrials() - Run N trials with concurrency control
+  - runSingleTrial() - Execute single trial with grading
+  - calculatePassAtK() - Probability of at least 1 success in k attempts
+  - calculatePassToTheK() - Probability all k attempts succeed
+  - calculateAvgScore(), calculatePassRate() - Score aggregation
+  - saveTrialToDb() - Database persistence
+
+**Files modified:**
+- agent-evals/src/core/index.ts - Export TrialManager and related types
+- agent-evals/src/index.ts - Export TrialManager from main module
+
+**Key features:**
+- Configurable trials per task (N)
+- Configurable concurrency (default: sequential for reproducibility)
+- pass@k formula: 1 - C(n-c, k) / C(n, k)
+- pass^k formula: (c/n)^k
+- Full trial callbacks for progress tracking
+- Database persistence for each trial and grader result
+- Combinatorial math utilities for metrics
+
+**Verification:**
+- npm run build: PASSED
+- npm run lint: PASSED
+
+**Notes for next iteration:**
+- Phase 1 (Foundation) complete - Tasks 1-8 all pass
+- Phase 2 (Graders) starts with Task 9: String match grader
+
+---
+
