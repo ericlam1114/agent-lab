@@ -1,6 +1,12 @@
 /**
- * Server exports
+ * Server module exports
  */
 
-// Will export: createServer, socket handlers
-export {};
+export {
+  EvalSocketServer,
+  initSocketServer,
+  getSocketServer,
+  createSocketProgressCallback,
+  type EvalProgressEvent,
+  type SocketServerOptions,
+} from "./socket";
