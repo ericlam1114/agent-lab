@@ -2,5 +2,15 @@
  * Agent provider exports
  */
 
-// Will export: HttpProvider, SdkProvider, CliProvider
-export {};
+// HTTP Provider
+export {
+  HttpProvider,
+  HttpProviderError,
+  TimeoutError,
+  RetryExhaustedError,
+  createProvider,
+  type Provider,
+  type HttpProviderConfig,
+  type HttpAgentRequest,
+  type HttpAgentResponse,
+} from './http-provider';

@@ -117,3 +117,35 @@
 
 ---
 
+## Task 4: HTTP Provider - COMPLETED
+
+**Files created:**
+- agent-evals/src/providers/http-provider.ts - HttpProvider class with:
+  - callAgent(input) - POST to endpoint, return AgentResponse
+  - Timeout handling with AbortController
+  - Retry logic with exponential backoff
+  - Custom errors: HttpProviderError, TimeoutError, RetryExhaustedError
+  - createProvider() factory function
+
+**Files modified:**
+- agent-evals/src/providers/index.ts - Export all provider classes and types
+
+**Key features:**
+- Configurable timeout (default 30s)
+- Configurable retries (default 3) with exponential backoff
+- Custom headers support
+- Proper error handling for network/timeout/HTTP errors
+- Don't retry on 4xx client errors (except 429)
+- Captures latency, tool calls, token usage
+- Factory function for creating providers
+
+**Verification:**
+- npm run build: PASSED
+- npm run lint: PASSED
+
+**Notes for next iteration:**
+- Task 5 creates TaskRunner using the provider
+- TaskRunner will orchestrate calling provider and capturing metrics
+
+---
+
