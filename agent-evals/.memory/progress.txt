@@ -1,0 +1,46 @@
+# Progress Log
+# Format: [timestamp] Task ID - Description - Status
+# Decisions, blockers, and notes for next iteration
+
+---
+
+## Task 1: Project Setup - COMPLETED
+
+**Files created:**
+- agent-evals/src/types.ts - Core type definitions (AgentConfig, TaskConfig, GraderConfig, etc.)
+- agent-evals/src/index.ts - Main exports
+- agent-evals/src/core/index.ts - Core module placeholder
+- agent-evals/src/graders/index.ts - Graders module exports
+- agent-evals/src/graders/code-based/index.ts - Code-based graders placeholder
+- agent-evals/src/graders/model-based/index.ts - Model-based graders placeholder
+- agent-evals/src/graders/human/index.ts - Human graders placeholder
+- agent-evals/src/providers/index.ts - Providers placeholder
+- agent-evals/src/agent-types/index.ts - Agent types placeholder
+- agent-evals/src/db/index.ts - Database placeholder
+- agent-evals/src/cli/index.ts - CLI entry point with Commander.js
+- agent-evals/src/server/index.ts - Server placeholder
+
+**Files modified:**
+- package.json - Added all required dependencies and scripts
+
+**Dependencies installed:**
+- drizzle-orm, better-sqlite3, commander, zod, yaml
+- socket.io, socket.io-client, openai, @anthropic-ai/sdk
+- recharts, uuid, tsx
+- devDependencies: drizzle-kit, vitest, @playwright/test
+
+**Scripts added:**
+- test, test:watch, test:coverage, test:e2e
+- db:generate, db:migrate, db:studio
+- agenteval (CLI entry point)
+
+**Verification:**
+- npm run build: PASSED
+- npm run lint: PASSED
+
+**Notes for next iteration:**
+- Task 2 should create the database schema using Drizzle ORM
+- Types are defined in types.ts, use them throughout
+
+---
+
