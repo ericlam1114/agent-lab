@@ -30,8 +30,30 @@ export {
   type JsonGraderConfig,
 } from './json-validator';
 
-// State Checker (Task 11)
-// export { ... } from './state-checker';
+// State Checker Graders
+export {
+  checkState,
+  stateCheckGrader,
+  stateCheckToGraderResult,
+  runStateChecks,
+  runStateCheckGraders,
+  createStateChecker,
+  type StateCheckType,
+  type StateCheckConfig,
+  type StateCheckResult,
+} from './state-checker';
 
-// Test Runner (Task 12)
-// export { ... } from './test-runner';
+// Test Runner Graders
+export {
+  runTests,
+  testRunnerGrader,
+  createTestRunner,
+  parseJestOutput,
+  parsePytestOutput,
+  parseMochaOutput,
+  parseTapOutput,
+  parseGenericOutput,
+  parseTestOutput,
+  type TestRunnerConfig,
+  type TestRunResult,
+} from './test-runner';
