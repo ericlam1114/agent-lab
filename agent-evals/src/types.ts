@@ -139,7 +139,7 @@ export interface Trial {
   taskId: string;
   attempt: number;
   status: 'pending' | 'running' | 'completed' | 'failed';
-  transcript: Transcript;
+  transcript: TrialTranscript;
   outcome?: Outcome;
   score?: number;
   graderResults: GraderResult[];
@@ -147,13 +147,17 @@ export interface Trial {
   completedAt?: Date;
 }
 
-export interface Transcript {
-  messages: TranscriptMessage[];
+/**
+ * Simple transcript data for Trial interface.
+ * For full transcript functionality, use the Transcript class from core.
+ */
+export interface TrialTranscript {
+  messages: TrialTranscriptMessage[];
   totalTokens: number;
   totalLatencyMs: number;
 }
 
-export interface TranscriptMessage {
+export interface TrialTranscriptMessage {
   role: 'user' | 'assistant' | 'system' | 'tool';
   content: string;
   timestamp: Date;

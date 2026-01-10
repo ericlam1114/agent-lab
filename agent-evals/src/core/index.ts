@@ -14,8 +14,15 @@ export {
   type TaskErrorInfo,
 } from './task-runner';
 
-// Transcript (to be implemented)
-// export { Transcript } from './transcript';
+// Transcript
+export {
+  Transcript,
+  type MessageRole,
+  type TranscriptMessage,
+  type ToolCallRecord,
+  type ToolResultRecord,
+  type TranscriptData,
+} from './transcript';
 
 // Evaluator (to be implemented)
 // export { Evaluator } from './evaluator';

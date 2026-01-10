@@ -149,3 +149,62 @@
 
 ---
 
+## Task 5: Task Runner - COMPLETED
+
+**Files created:**
+- agent-evals/src/core/task-runner.ts - TaskRunner class with:
+  - run(task) - Execute single task against provider
+  - executeWithTimeout() - Timeout wrapper using Promise.race
+  - createMetrics() - Build TaskMetrics from execution
+  - createError() - Convert exceptions to TaskErrorInfo
+  - Custom errors: TaskError, TaskTimeoutError, TaskExecutionError
+  - createTaskRunner() factory function
+
+**Files modified:**
+- agent-evals/src/core/index.ts - Export TaskRunner and related types
+
+**Key features:**
+- Configurable timeout per task or global default
+- Promise.race for timeout handling
+- Captures full metrics: duration, latency, tokens
+- Graceful error handling with typed errors
+- Factory function for easy instantiation
+
+**Verification:**
+- npm run build: PASSED
+- npm run lint: PASSED
+
+---
+
+## Task 6: Transcript Capture - COMPLETED
+
+**Files created:**
+- agent-evals/src/core/transcript.ts - Transcript class with:
+  - addUserMessage(), addAssistantMessage(), addSystemMessage()
+  - addToolCall(), addToolResult()
+  - updateTokens(), addLatency()
+  - toJSON(), fromJSON(), toString(), fromString()
+  - complete() - Mark transcript as finished
+
+**Files modified:**
+- agent-evals/src/core/index.ts - Export Transcript and related types
+- agent-evals/src/index.ts - Selective exports to avoid naming conflicts
+- agent-evals/src/types.ts - Renamed Transcript → TrialTranscript to avoid conflict
+
+**Key decisions:**
+- Transcript class provides full functionality for recording
+- TrialTranscript interface in types.ts for simple data representation
+- TranscriptData type for JSON serialization
+- Unique ID generation for transcripts and messages
+- Token tracking by role (prompt vs completion)
+
+**Verification:**
+- npm run build: PASSED
+- npm run lint: PASSED
+
+**Notes for next iteration:**
+- Task 7 creates Evaluator that orchestrates TaskRunner with concurrency
+- Task 8 creates TrialManager for multiple trials and pass@k metrics
+
+---
+

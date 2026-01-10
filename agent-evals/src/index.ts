@@ -8,10 +8,52 @@
  */
 
 // Core types (primary types for the framework)
-export * from './types';
+// Export everything except Transcript and TranscriptMessage which conflict with core
+export {
+  type AgentType,
+  type AgentConfig,
+  type TaskConfig,
+  type TaskInput,
+  type Message,
+  type EnvironmentConfig,
+  type GraderType,
+  type GraderConfig,
+  type EvalConfig,
+  type EvalSettings,
+  type AgentResponse,
+  type ToolCall,
+  type TokenUsage,
+  type Trial,
+  type TrialTranscript,
+  type TrialTranscriptMessage,
+  type Outcome,
+  type GraderResult,
+  type EvalResult,
+  type EvalSummary,
+  type EvalMetrics,
+  type EvalProgress,
+  type EvalEvent,
+} from './types';
 
-// Core evaluation engine
-export * from './core';
+// Core evaluation engine - Transcript class and related types
+export {
+  // Task Runner
+  TaskRunner,
+  TaskError,
+  TaskTimeoutError,
+  TaskExecutionError,
+  createTaskRunner,
+  type TaskResult,
+  type TaskMetrics,
+  type TaskErrorInfo,
+  // Transcript
+  Transcript,
+  type MessageRole,
+  type TranscriptMessage,
+  type ToolCallRecord,
+  type ToolResultRecord,
+  type TranscriptData,
+} from './core';
 
 // Graders
 export * from './graders';
