@@ -101,12 +101,12 @@ function OnboardingWelcome({ onCreateEval }: { onCreateEval: () => void }) {
         </div>
 
         {/* CLI Alternative */}
-        <div className="mt-8 text-sm text-zinc-500">
+        {/* <div className="mt-8 text-sm text-zinc-500">
           <p>Or use the CLI:</p>
           <code className="code-block mt-2 inline-block px-4 py-2">
             npx agenteval init && npx agenteval run
           </code>
-        </div>
+        </div> */}
       </div>
     </div>
   );

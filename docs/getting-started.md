@@ -1,10 +1,10 @@
 # Getting Started with Agent Lab
 
-Agent Lab is a framework for evaluating AI agents systematically. You define test cases. The framework runs your agent against them. You get pass/fail results with detailed traces.
+Agent Lab is a framework for evaluating AI agents systematically. You define tasks with graders. The framework runs your agent against them. You get pass/fail results with scores.
 
-This guide walks you through your first evaluation. We'll test an AI agent's HTTP endpoint against a set of prompts.
+This guide walks you through your first evaluation. We'll set up a config, define test cases, and run them against your agent.
 
-I'm assuming you have Node.js 18+ installed. The concepts translate to any agent that accepts HTTP requests.
+I'm assuming you have Node.js 18+ and the repo cloned locally.
 
 ## Why Evaluate Your Agents?
 
@@ -13,158 +13,195 @@ Ship with confidence. Catch regressions before users do. Know exactly when your 
 Key benefits:
 - **Reproducibility** - Same test, same conditions, every time
 - **Visibility** - See exactly where your agent fails
-- **Iteration speed** - Change your prompt, rerun, compare results
-- **Cost tracking** - Know how many tokens each test case burns
+- **Multiple graders** - Combine exact match, regex, LLM rubric, test runners
+- **Multiple trials** - Run each task N times to measure consistency
 
-## 1. Install Agent Lab
+## 1. Initialize Your Config
 
-```bash
-npx agenteval init
-```
-
-This scaffolds a config file and example test cases in your project.
-
-Alternatively, install globally:
+Run the interactive init command:
 
 ```bash
-npm i -g agenteval
+npm run agenteval -- init
 ```
 
-## 2. Configure Your Agent Endpoint
+You'll be prompted for:
+- Evaluation name
+- Agent type (coding, conversational, research, computer-use)
+- Agent API endpoint
 
-Agent Lab needs to know how to talk to your agent. Edit `agenteval.config.json`:
+This creates `agenteval.yaml` in your project root and a `.agentevals/` directory with a sample custom grader.
 
-```json
-{
-  "agent": {
-    "endpoint": "http://localhost:3000/api/chat",
-    "method": "POST",
-    "headers": {
-      "Authorization": "Bearer ${AGENT_API_KEY}"
-    }
-  }
-}
-```
-
-Key elements:
-- `endpoint` - Where your agent lives
-- `headers` - Auth tokens, API keys (use env vars)
-- `method` - Usually POST for chat agents
-
-Environment variables are interpolated at runtime. Keep secrets out of config files.
-
-## 3. Write Your First Test Case
-
-Test cases live in `evals/`. Create `evals/basic.json`:
-
-```json
-{
-  "name": "basic-math",
-  "prompt": "What is 2 + 2?",
-  "expected": {
-    "contains": "4"
-  }
-}
-```
-
-This sends the prompt to your agent and checks if the response contains "4".
-
-You can also use:
-- `equals` - Exact match
-- `regex` - Pattern match
-- `llm-judge` - Have another LLM grade the response
-
-Start simple. Add complexity as you learn what breaks.
-
-## 4. Run Your First Eval
+For non-interactive setup:
 
 ```bash
-npx agenteval run
+npm run agenteval -- init --name my-eval --type coding --endpoint http://localhost:3000/api/agent --non-interactive
 ```
 
-Agent Lab will:
-1. Load all test cases from `evals/`
-2. Send each prompt to your agent
-3. Check responses against expected outcomes
-4. Output pass/fail with timing data
+## 2. Configure Your Agent
 
-You'll see output like:
+Edit `agenteval.yaml`. The agent section tells Agent Lab how to talk to your agent:
 
-```
-✓ basic-math (234ms)
-✗ complex-reasoning (1.2s) - expected "Paris", got "France"
-
-2 tests, 1 passed, 1 failed
-```
-
-## 5. Add Grading with LLM Judge
-
-For open-ended responses, exact matching doesn't work. Use an LLM to grade:
-
-```json
-{
-  "name": "explanation-quality",
-  "prompt": "Explain quantum entanglement to a 10-year-old",
-  "expected": {
-    "llm-judge": {
-      "criteria": "Response is accurate, uses simple language, includes a relatable analogy"
-    }
-  }
-}
+```yaml
+agent:
+  type: http
+  endpoint: http://localhost:3000/api/agent
+  timeout: 30000
+  headers:
+    Authorization: Bearer ${AGENT_API_KEY}
+  retries: 3
 ```
 
-The judge LLM scores 0-100 based on your criteria. You set the pass threshold.
+Agent types:
+- `http` - REST API endpoint (requires `endpoint`)
+- `cli` - Command-line tool (requires `command`)
+- `sdk` - Direct SDK integration
 
-## 6. Run Multiple Trials
+Environment variables like `${AGENT_API_KEY}` are interpolated at runtime.
 
-Agents are non-deterministic. One pass doesn't mean reliability. Run multiple trials:
+## 3. Define Your Tasks
+
+Tasks live in the `tasks` array. Each task needs an ID, description, input, and at least one grader:
+
+```yaml
+tasks:
+  - id: factorial-function
+    type: coding
+    description: Generate a factorial function
+    input:
+      prompt: "Write a TypeScript function that calculates the factorial of a number"
+    graders:
+      - type: test-runner
+        command: npm test
+        pattern: "factorial"
+      - type: llm-rubric
+        rubric: |
+          Evaluate the code:
+          1. Correctness (0-1): Does it handle edge cases like 0 and negative numbers?
+          2. Readability (0-1): Is the code clean?
+```
+
+Available grader types:
+- `exact-match` - Output must match exactly
+- `contains` - Output must contain a string
+- `regex` - Output must match a pattern
+- `fuzzy-match` - Similarity threshold (default 0.8)
+- `json-valid` - Output must be valid JSON
+- `json-schema` - Output must match a JSON schema
+- `test-runner` - Run a test command
+- `llm-rubric` - LLM grades against a rubric
+- `factuality` - LLM checks factual accuracy
+- `state-check` - Check external state (API, file, etc.)
+
+## 4. Run Your Evaluation
 
 ```bash
-npx agenteval run --trials 5
+npm run agenteval -- run
 ```
 
-This runs each test case 5 times and reports:
-- Pass rate per test
-- Average response time
-- Token usage stats
+You'll see a progress bar and results table:
 
-A test that passes 3/5 times tells you something different than 5/5.
+```
+🚀 Running evaluation: my-agent-eval
+   Tasks: 3
+   Trials per task: 3
+   Concurrency: 2
 
-## 7. View Results in the Dashboard
+[████████████████████████████████████████] 100% (3/3)
 
-For deeper analysis, launch the web UI:
+📊 Results:
+
+-----------+--------+-------+--------+--------+--------------------------------
+ Task      | Status | Score | Trials | Passed | Details
+-----------+--------+-------+--------+--------+--------------------------------
+ factorial | ✓ PASS | 100%  | 3      | 3      | All tests passed
+ sort      | ✗ FAIL | 66.7% | 3      | 2      | Edge case failed
+-----------+--------+-------+--------+--------+--------------------------------
+
+📈 Summary:
+   Pass Rate: 83.3%
+   Total Time: 12.4s
+   Status: ✓ PASSED
+```
+
+## 5. Customize Your Run
+
+Override settings from the command line:
 
 ```bash
-npx agenteval dashboard
+# Run specific tasks
+npm run agenteval -- run --tasks factorial,sort
+
+# More trials for consistency testing
+npm run agenteval -- run --trials 5
+
+# Higher concurrency for faster runs
+npm run agenteval -- run --concurrency 4
+
+# Save results to file
+npm run agenteval -- run --save results.json
+
+# Quiet mode for CI
+npm run agenteval -- run --quiet
 ```
 
-Open `http://localhost:3737`. You'll see:
-- Historical pass rates over time
-- Side-by-side response comparisons
-- Cost breakdowns per eval run
-- Failure patterns and common error modes
+## 6. Configure Settings
+
+Fine-tune evaluation behavior in `agenteval.yaml`:
+
+```yaml
+settings:
+  trialsPerTask: 3        # Run each task 3 times
+  maxConcurrency: 5       # Run up to 5 tasks in parallel
+  passThreshold: 0.5      # 50% pass rate to pass overall
+  timeout: 60000          # 60 second timeout per task
+  retries: 3              # Retry failed API calls
+  stopOnFailure: false    # Continue even if tasks fail
+  randomizeOrder: false   # Run tasks in defined order
+```
+
+## 7. Use the Web Dashboard
+
+For visual results and historical tracking, start the web UI:
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`. You'll see:
+- Recent evaluations with pass rates
+- Task-by-task breakdowns
+- Historical trends over time
 
 ## Make It Your Own
 
-Agent Lab is just a test runner. The power is in how you use it.
+Agent Lab supports four agent types out of the box. Each comes with sensible defaults.
 
-**Regression suites** - Build a golden set of test cases. Run on every deploy. Block releases that regress.
+**Coding agents** - Test code generation with test runners and rubrics. The framework runs your test suite and grades the output.
 
-**Prompt iteration** - A/B test prompts. Same test cases, different system prompts. Compare pass rates.
+**Conversational agents** - Multi-turn conversation testing. Define user personas, track empathy and resolution metrics.
 
-**Model comparison** - Point at GPT-4, Claude, Llama. Same tests. See which model handles your use case best.
+**Research agents** - Test information gathering. Grade for accuracy, completeness, and source quality.
 
-**CI integration** - Add to your GitHub Actions. Fail the build if pass rate drops below threshold.
+**Computer-use agents** - Browser and desktop automation. Verify state changes via API checks or screenshots.
 
-```yaml
-- name: Run agent evals
-  run: npx agenteval run --threshold 0.9
+**Custom graders** - Write TypeScript functions in `.agentevals/graders/` for domain-specific evaluation. The sample grader shows the interface:
+
+```typescript
+export async function customGrader(
+  output: string,
+  expected?: string
+): Promise<GraderResult> {
+  const passed = output.includes('expected value');
+  return {
+    graderId: 'my-grader',
+    graderType: 'custom',
+    passed,
+    score: passed ? 1 : 0,
+    details: 'Custom validation logic',
+  };
+}
 ```
-
-**Custom graders** - Write JavaScript functions for domain-specific evaluation. Check JSON schema compliance. Validate code execution. Score retrieval relevance.
-
-Any task that fits "send prompt, check response" works with Agent Lab.
 
 ---
 
-Next: [Writing Effective Test Cases](/docs/test-cases) | [LLM Judge Configuration](/docs/llm-judge)
+Next: Run `npm run agenteval -- init` to get started.

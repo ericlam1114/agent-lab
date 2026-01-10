@@ -16,6 +16,7 @@ const docSections = [
   { id: 'agent-types', label: 'Agent Types', icon: '🤖' },
   { id: 'cli', label: 'CLI Reference', icon: '💻' },
   { id: 'api', label: 'API Reference', icon: '🔌' },
+  { id: 'cicd', label: 'CI/CD Integration', icon: '🔄' },
   { id: 'troubleshooting', label: 'Troubleshooting', icon: '🔧' },
   { id: 'best-practices', label: 'Best Practices', icon: '📚' },
   { id: 'examples', label: 'Examples', icon: '📝' },
@@ -694,6 +695,365 @@ Response:
   );
 }
 
+// CI/CD Integration content
+function CICDContent() {
+  return (
+    <div>
+      <h1 className="docs-heading">CI/CD Integration</h1>
+      <p className="docs-paragraph">
+        Integrate Agent Evals into your CI/CD pipeline to automatically run evaluations on every commit,
+        detect regressions, and gate deployments based on performance thresholds.
+      </p>
+
+      <h2 className="docs-subheading">GitHub Actions</h2>
+      <p className="docs-paragraph">Complete workflow for running evaluations on push and pull requests:</p>
+      <CodeBlock code={`# .github/workflows/agent-eval.yml
+name: Agent Evaluation
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  OPENAI_API_KEY: \${{ secrets.OPENAI_API_KEY }}
+  ANTHROPIC_API_KEY: \${{ secrets.ANTHROPIC_API_KEY }}
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run agent evaluations
+        id: eval
+        run: |
+          npx agenteval run --quiet --output json --output-file results.json
+          echo "pass_rate=$(jq -r '.metrics.passRate' results.json)" >> $GITHUB_OUTPUT
+          echo "pass_at_1=$(jq -r '.metrics.passAt1' results.json)" >> $GITHUB_OUTPUT
+
+      - name: Upload results artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: results.json
+          retention-days: 30
+
+      - name: Check pass rate threshold
+        run: |
+          PASS_RATE=\${{ steps.eval.outputs.pass_rate }}
+          THRESHOLD=0.80
+          if (( $(echo "$PASS_RATE < $THRESHOLD" | bc -l) )); then
+            echo "::error::Pass rate $PASS_RATE is below threshold $THRESHOLD"
+            exit 1
+          fi
+          echo "Pass rate $PASS_RATE meets threshold $THRESHOLD"
+
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const passRate = '\${{ steps.eval.outputs.pass_rate }}';
+            const passAt1 = '\${{ steps.eval.outputs.pass_at_1 }}';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '## Agent Evaluation Results\\n\\n' +
+                    '| Metric | Value |\\n' +
+                    '|--------|-------|\\n' +
+                    '| Pass Rate | ' + (passRate * 100).toFixed(1) + '% |\\n' +
+                    '| Pass@1 | ' + (passAt1 * 100).toFixed(1) + '% |'
+            })`} language="yaml" />
+
+      <h2 className="docs-subheading">GitLab CI</h2>
+      <p className="docs-paragraph">GitLab CI/CD configuration:</p>
+      <CodeBlock code={`# .gitlab-ci.yml
+stages:
+  - test
+  - evaluate
+  - deploy
+
+variables:
+  OPENAI_API_KEY: $OPENAI_API_KEY
+  ANTHROPIC_API_KEY: $ANTHROPIC_API_KEY
+
+agent-eval:
+  stage: evaluate
+  image: node:20
+  script:
+    - npm ci
+    - npx agenteval run --quiet --output json --output-file results.json
+    - |
+      PASS_RATE=$(jq -r '.metrics.passRate' results.json)
+      echo "Pass Rate: $PASS_RATE"
+      if (( $(echo "$PASS_RATE < 0.80" | bc -l) )); then
+        echo "Evaluation failed: pass rate below threshold"
+        exit 1
+      fi
+  artifacts:
+    paths:
+      - results.json
+    reports:
+      metrics: results.json
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"`} language="yaml" />
+
+      <h2 className="docs-subheading">Regression Detection</h2>
+      <p className="docs-paragraph">
+        Compare against baselines to detect performance regressions:
+      </p>
+      <CodeBlock code={`# regression-check.yml
+name: Regression Check
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  regression-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run evaluation
+        run: npx agenteval run --output json --output-file current.json
+
+      - name: Download baseline
+        uses: actions/download-artifact@v4
+        with:
+          name: baseline-results
+          path: ./baseline
+        continue-on-error: true
+
+      - name: Compare with baseline
+        run: |
+          if [ -f "./baseline/results.json" ]; then
+            BASELINE_PASS_RATE=$(jq -r '.metrics.passRate' ./baseline/results.json)
+            CURRENT_PASS_RATE=$(jq -r '.metrics.passRate' current.json)
+
+            REGRESSION=$(echo "$BASELINE_PASS_RATE - $CURRENT_PASS_RATE" | bc -l)
+            THRESHOLD=0.05  # 5% regression threshold
+
+            if (( $(echo "$REGRESSION > $THRESHOLD" | bc -l) )); then
+              echo "::error::Regression detected! Pass rate dropped from $BASELINE_PASS_RATE to $CURRENT_PASS_RATE"
+              exit 1
+            fi
+            echo "No regression detected"
+          else
+            echo "No baseline found, skipping comparison"
+          fi
+
+      - name: Update baseline (on main)
+        if: github.ref == 'refs/heads/main' && success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-results
+          path: current.json
+          overwrite: true`} language="yaml" />
+
+      <h2 className="docs-subheading">Eval Suites in CI</h2>
+      <p className="docs-paragraph">
+        Run different eval suites for different scenarios:
+      </p>
+      <CodeBlock code={`# Run specific suites based on changed files
+name: Targeted Evaluations
+
+on:
+  push:
+    paths:
+      - 'src/agents/support/**'
+      - 'src/agents/code/**'
+
+jobs:
+  eval-support:
+    if: contains(github.event.head_commit.modified, 'src/agents/support/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npx agenteval run --config evals/support-eval.yaml
+
+  eval-code:
+    if: contains(github.event.head_commit.modified, 'src/agents/code/')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npx agenteval run --config evals/code-eval.yaml`} language="yaml" />
+
+      <h2 className="docs-subheading">Deployment Gates</h2>
+      <p className="docs-paragraph">
+        Block deployments if evaluations fail:
+      </p>
+      <CodeBlock code={`# deploy-with-eval-gate.yml
+name: Deploy with Eval Gate
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    outputs:
+      passed: \${{ steps.check.outputs.passed }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npx agenteval run --output json --output-file results.json
+
+      - id: check
+        run: |
+          PASS_RATE=$(jq -r '.metrics.passRate' results.json)
+          if (( $(echo "$PASS_RATE >= 0.85" | bc -l) )); then
+            echo "passed=true" >> $GITHUB_OUTPUT
+          else
+            echo "passed=false" >> $GITHUB_OUTPUT
+          fi
+
+  deploy:
+    needs: evaluate
+    if: needs.evaluate.outputs.passed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production..."
+          # Your deployment commands here
+
+  notify-failure:
+    needs: evaluate
+    if: needs.evaluate.outputs.passed == 'false'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify team
+        run: |
+          echo "Evaluation failed - deployment blocked"
+          # Send Slack/email notification`} language="yaml" />
+
+      <h2 className="docs-subheading">Scheduled Evaluations</h2>
+      <p className="docs-paragraph">
+        Run evaluations on a schedule to monitor agent performance over time:
+      </p>
+      <CodeBlock code={`# scheduled-eval.yml
+name: Scheduled Evaluation
+
+on:
+  schedule:
+    - cron: '0 6 * * *'  # Daily at 6 AM UTC
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  daily-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+
+      - name: Run full evaluation suite
+        run: npx agenteval run --config evals/full-suite.yaml --output json --output-file daily-results.json
+
+      - name: Upload to dashboard
+        run: |
+          curl -X POST https://your-dashboard.com/api/results \\
+            -H "Authorization: Bearer \${{ secrets.DASHBOARD_TOKEN }}" \\
+            -H "Content-Type: application/json" \\
+            -d @daily-results.json
+
+      - name: Alert on degradation
+        if: failure()
+        uses: slackapi/slack-github-action@v1
+        with:
+          payload: |
+            {
+              "text": "Daily agent evaluation failed!",
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "*Daily Agent Evaluation Failed*\\n<\${{ github.server_url }}/\${{ github.repository }}/actions/runs/\${{ github.run_id }}|View Run>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: \${{ secrets.SLACK_WEBHOOK }}`} language="yaml" />
+
+      <h2 className="docs-subheading">Environment Variables</h2>
+      <p className="docs-paragraph">
+        Required secrets and environment variables for CI/CD:
+      </p>
+      <div className="overflow-x-auto mb-6">
+        <table className="table-tactical">
+          <thead>
+            <tr>
+              <th>Variable</th>
+              <th>Description</th>
+              <th>Required</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code className="docs-code-inline">OPENAI_API_KEY</code></td>
+              <td>API key for OpenAI models and graders</td>
+              <td>If using OpenAI</td>
+            </tr>
+            <tr>
+              <td><code className="docs-code-inline">ANTHROPIC_API_KEY</code></td>
+              <td>API key for Claude models</td>
+              <td>If using Anthropic</td>
+            </tr>
+            <tr>
+              <td><code className="docs-code-inline">AGENT_ENDPOINT</code></td>
+              <td>Your agent&apos;s API endpoint</td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td><code className="docs-code-inline">EVAL_PASS_THRESHOLD</code></td>
+              <td>Minimum pass rate (default: 0.8)</td>
+              <td>No</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h2 className="docs-subheading">Best Practices</h2>
+      <ul className="list-disc list-inside mb-6 space-y-2 text-[var(--foreground-muted)]">
+        <li><strong>Cache dependencies:</strong> Use npm/yarn cache to speed up CI runs</li>
+        <li><strong>Run in parallel:</strong> Split eval suites across multiple jobs</li>
+        <li><strong>Store baselines:</strong> Keep baseline results as artifacts for regression detection</li>
+        <li><strong>Set timeouts:</strong> Prevent hung evaluations from blocking pipelines</li>
+        <li><strong>Use secrets:</strong> Never commit API keys to your repository</li>
+        <li><strong>Notify on failure:</strong> Set up alerts for failed evaluations</li>
+        <li><strong>Track trends:</strong> Upload results to a dashboard for trend analysis</li>
+      </ul>
+    </div>
+  );
+}
+
 // Troubleshooting content
 function TroubleshootingContent() {
   return (
@@ -1048,6 +1408,8 @@ export default function DocsPage() {
         return <CLIContent />;
       case 'api':
         return <APIContent />;
+      case 'cicd':
+        return <CICDContent />;
       case 'troubleshooting':
         return <TroubleshootingContent />;
       case 'best-practices':
