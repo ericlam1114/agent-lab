@@ -3,8 +3,81 @@
  * Calls external agent endpoints via HTTP API
  */
 
+import { URL } from 'url';
 import type { AgentConfig } from '../config/schema';
 import type { AgentResponse, ToolCall, TokenUsage, TaskInput } from '../types';
+
+// ============================================================================
+// Security: SSRF Protection
+// ============================================================================
+
+/**
+ * Blocked IP ranges for SSRF protection
+ */
+const BLOCKED_IP_PATTERNS = [
+  /^127\./, // 127.0.0.0/8 (loopback)
+  /^10\./, // 10.0.0.0/8 (private)
+  /^172\.(1[6-9]|2[0-9]|3[0-1])\./, // 172.16.0.0/12 (private)
+  /^192\.168\./, // 192.168.0.0/16 (private)
+  /^169\.254\./, // 169.254.0.0/16 (link-local, AWS metadata)
+  /^0\./, // 0.0.0.0/8
+  /^::1$/, // IPv6 loopback
+  /^fc00:/, // IPv6 private
+  /^fe80:/, // IPv6 link-local
+];
+
+/**
+ * Blocked hostnames for SSRF protection
+ */
+const BLOCKED_HOSTNAMES = [
+  'localhost',
+  'metadata.google.internal',
+  'metadata',
+  '169.254.169.254', // AWS/GCP metadata endpoint
+];
+
+/**
+ * Check if SSRF protection should be skipped (for testing)
+ * Set ALLOW_LOCALHOST=true or NODE_ENV=test to allow localhost
+ */
+function shouldAllowLocalhost(): boolean {
+  return process.env.ALLOW_LOCALHOST === 'true' || process.env.NODE_ENV === 'test';
+}
+
+/**
+ * Validate endpoint URL to prevent SSRF attacks
+ */
+function validateEndpointUrl(urlString: string): void {
+  let url: URL;
+  try {
+    url = new URL(urlString);
+  } catch {
+    throw new Error(`Invalid endpoint URL: ${urlString}`);
+  }
+
+  // Only allow HTTP/HTTPS
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    throw new Error(`Invalid protocol: ${url.protocol}. Only http and https are allowed.`);
+  }
+
+  // Allow localhost in test environments
+  if (shouldAllowLocalhost()) {
+    return;
+  }
+
+  // Check blocked hostnames
+  const hostname = url.hostname.toLowerCase();
+  if (BLOCKED_HOSTNAMES.includes(hostname)) {
+    throw new Error(`Blocked hostname: ${hostname}. Internal hostnames are not allowed.`);
+  }
+
+  // Check if hostname is an IP address and block private ranges
+  for (const pattern of BLOCKED_IP_PATTERNS) {
+    if (pattern.test(hostname)) {
+      throw new Error(`Blocked IP address: ${hostname}. Private and internal IPs are not allowed.`);
+    }
+  }
+}
 
 // ============================================================================
 // Types
@@ -96,6 +169,9 @@ export class HttpProvider {
     if (!agentConfig.endpoint) {
       throw new Error('HttpProvider requires endpoint URL');
     }
+
+    // Validate endpoint URL to prevent SSRF (security)
+    validateEndpointUrl(agentConfig.endpoint);
 
     this.config = {
       endpoint: agentConfig.endpoint,

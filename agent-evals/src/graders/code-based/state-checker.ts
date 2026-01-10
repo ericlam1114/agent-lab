@@ -4,8 +4,153 @@
  */
 
 import { readFileSync, existsSync, statSync } from 'fs';
+import * as path from 'path';
+import { URL } from 'url';
 import type { GraderResult, GraderType } from '../../types';
 import { deepEqual } from './json-validator';
+
+// ============================================================================
+// Security: URL Validation (SSRF Protection)
+// ============================================================================
+
+/**
+ * Blocked IP ranges for SSRF protection
+ */
+const BLOCKED_IP_PATTERNS = [
+  /^127\./, // 127.0.0.0/8 (loopback)
+  /^10\./, // 10.0.0.0/8 (private)
+  /^172\.(1[6-9]|2[0-9]|3[0-1])\./, // 172.16.0.0/12 (private)
+  /^192\.168\./, // 192.168.0.0/16 (private)
+  /^169\.254\./, // 169.254.0.0/16 (link-local, AWS metadata)
+  /^0\./, // 0.0.0.0/8
+  /^::1$/, // IPv6 loopback
+  /^fc00:/, // IPv6 private
+  /^fe80:/, // IPv6 link-local
+];
+
+/**
+ * Blocked hostnames for SSRF protection
+ */
+const BLOCKED_HOSTNAMES = [
+  'localhost',
+  'metadata.google.internal',
+  'metadata',
+  '169.254.169.254', // AWS/GCP metadata endpoint
+];
+
+/**
+ * Check if SSRF protection should be skipped (for testing)
+ */
+function shouldAllowLocalhost(): boolean {
+  return process.env.ALLOW_LOCALHOST === 'true' || process.env.NODE_ENV === 'test';
+}
+
+/**
+ * Validate URL to prevent SSRF attacks
+ */
+function validateUrl(urlString: string): void {
+  let url: URL;
+  try {
+    url = new URL(urlString);
+  } catch {
+    throw new Error(`Invalid URL: ${urlString}`);
+  }
+
+  // Only allow HTTP/HTTPS
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    throw new Error(`Invalid protocol: ${url.protocol}. Only http and https are allowed.`);
+  }
+
+  // Allow localhost in test environments
+  if (shouldAllowLocalhost()) {
+    return;
+  }
+
+  // Check blocked hostnames
+  const hostname = url.hostname.toLowerCase();
+  if (BLOCKED_HOSTNAMES.includes(hostname)) {
+    throw new Error(`Blocked hostname: ${hostname}`);
+  }
+
+  // Check if hostname is an IP address and block private ranges
+  for (const pattern of BLOCKED_IP_PATTERNS) {
+    if (pattern.test(hostname)) {
+      throw new Error(`Blocked IP address: ${hostname}. Private and internal IPs are not allowed.`);
+    }
+  }
+}
+
+// ============================================================================
+// Security: Command Validation
+// ============================================================================
+
+/**
+ * Allowed command executables for state checking (whitelist)
+ */
+const ALLOWED_STATE_CHECK_COMMANDS = [
+  'ls', 'cat', 'head', 'tail', 'wc', 'grep', 'find', 'test',
+  'echo', 'stat', 'file', 'diff', 'md5sum', 'sha256sum',
+  'git', 'node', 'npm', 'npx',
+];
+
+/**
+ * Validate command for safe execution
+ */
+function validateStateCommand(command: string): { executable: string; args: string[] } {
+  if (!command || typeof command !== 'string') {
+    throw new Error('Command must be a non-empty string');
+  }
+
+  const parts = command.trim().split(/\s+/);
+  const executable = parts[0];
+  const args = parts.slice(1);
+
+  const baseName = path.basename(executable);
+  if (!ALLOWED_STATE_CHECK_COMMANDS.includes(baseName) && !ALLOWED_STATE_CHECK_COMMANDS.includes(executable)) {
+    throw new Error(
+      `Command executable "${executable}" is not allowed for state checks. ` +
+      `Allowed: ${ALLOWED_STATE_CHECK_COMMANDS.join(', ')}`
+    );
+  }
+
+  // Block dangerous shell metacharacters
+  const dangerousChars = /[;&|`$(){}[\]<>\\]/;
+  for (const arg of args) {
+    if (dangerousChars.test(arg)) {
+      throw new Error(`Argument "${arg}" contains potentially dangerous characters.`);
+    }
+  }
+
+  return { executable, args };
+}
+
+// ============================================================================
+// Security: Path Validation
+// ============================================================================
+
+/**
+ * Validate file path to prevent path traversal
+ */
+function validateFilePath(filePath: string, baseDir?: string): string {
+  const resolved = path.resolve(filePath);
+
+  if (baseDir) {
+    const resolvedBase = path.resolve(baseDir);
+    if (!resolved.startsWith(resolvedBase)) {
+      throw new Error(`Path traversal detected: path must be within ${baseDir}`);
+    }
+  }
+
+  // Block common sensitive paths
+  const blockedPaths = ['/etc/shadow', '/etc/passwd', '~/.ssh', '~/.aws'];
+  for (const blocked of blockedPaths) {
+    if (resolved.includes(blocked) || filePath.includes(blocked)) {
+      throw new Error(`Access to ${blocked} is not allowed`);
+    }
+  }
+
+  return resolved;
+}
 
 // ============================================================================
 // Types
@@ -53,9 +198,9 @@ export interface StateCheckResult {
  * Check file system state
  */
 async function checkFileState(config: StateCheckConfig): Promise<StateCheckResult> {
-  const { path, fileContent, fileExists, filePattern } = config;
+  const { path: filePath, fileContent, fileExists, filePattern } = config;
 
-  if (!path) {
+  if (!filePath) {
     return {
       type: 'file',
       passed: false,
@@ -64,8 +209,21 @@ async function checkFileState(config: StateCheckConfig): Promise<StateCheckResul
     };
   }
 
+  // Validate path to prevent traversal (security)
+  let safePath: string;
+  try {
+    safePath = validateFilePath(filePath);
+  } catch (validationError) {
+    return {
+      type: 'file',
+      passed: false,
+      details: 'Path validation failed',
+      error: validationError instanceof Error ? validationError.message : String(validationError),
+    };
+  }
+
   // Check file existence
-  const exists = existsSync(path);
+  const exists = existsSync(safePath);
 
   if (fileExists !== undefined) {
     const passed = exists === fileExists;
@@ -75,7 +233,7 @@ async function checkFileState(config: StateCheckConfig): Promise<StateCheckResul
       actual: exists,
       expected: fileExists,
       details: passed
-        ? `File ${fileExists ? 'exists' : 'does not exist'} as expected: ${path}`
+        ? `File ${fileExists ? 'exists' : 'does not exist'} as expected: ${safePath}`
         : `File ${exists ? 'exists' : 'does not exist'}, expected ${fileExists ? 'to exist' : 'not to exist'}`,
     };
   }
@@ -84,22 +242,22 @@ async function checkFileState(config: StateCheckConfig): Promise<StateCheckResul
     return {
       type: 'file',
       passed: false,
-      details: `File not found: ${path}`,
+      details: `File not found: ${safePath}`,
     };
   }
 
   // Read file content
   try {
-    const stats = statSync(path);
+    const stats = statSync(safePath);
     if (stats.isDirectory()) {
       return {
         type: 'file',
         passed: false,
-        details: `Path is a directory, not a file: ${path}`,
+        details: `Path is a directory, not a file: ${safePath}`,
       };
     }
 
-    const content = readFileSync(path, 'utf-8');
+    const content = readFileSync(safePath, 'utf-8');
 
     // Check exact content match
     if (fileContent !== undefined) {
@@ -132,13 +290,13 @@ async function checkFileState(config: StateCheckConfig): Promise<StateCheckResul
     return {
       type: 'file',
       passed: true,
-      details: `File exists and is readable: ${path} (${content.length} bytes)`,
+      details: `File exists and is readable: ${safePath} (${content.length} bytes)`,
     };
   } catch (error) {
     return {
       type: 'file',
       passed: false,
-      details: `Error reading file: ${path}`,
+      details: `Error reading file: ${safePath}`,
       error: error instanceof Error ? error.message : String(error),
     };
   }
@@ -169,6 +327,18 @@ async function checkApiState(config: StateCheckConfig): Promise<StateCheckResult
       passed: false,
       details: 'URL not provided',
       error: 'Configuration error: url required',
+    };
+  }
+
+  // Validate URL to prevent SSRF (security)
+  try {
+    validateUrl(url);
+  } catch (validationError) {
+    return {
+      type: 'api',
+      passed: false,
+      details: 'URL validation failed',
+      error: validationError instanceof Error ? validationError.message : String(validationError),
     };
   }
 
@@ -261,6 +431,7 @@ async function checkApiState(config: StateCheckConfig): Promise<StateCheckResult
 
 /**
  * Check state via command execution
+ * Uses spawn with shell: false to prevent command injection
  */
 async function checkCommandState(config: StateCheckConfig): Promise<StateCheckResult> {
   const { command, workingDirectory, expect, expectMatch, timeout = 30000 } = config;
@@ -274,15 +445,39 @@ async function checkCommandState(config: StateCheckConfig): Promise<StateCheckRe
     };
   }
 
+  // Validate command (security)
+  let executable: string;
+  let args: string[];
   try {
-    const { execSync } = await import('child_process');
+    const validated = validateStateCommand(command);
+    executable = validated.executable;
+    args = validated.args;
+  } catch (validationError) {
+    return {
+      type: 'command',
+      passed: false,
+      details: 'Command validation failed',
+      error: validationError instanceof Error ? validationError.message : String(validationError),
+    };
+  }
 
-    const output = execSync(command, {
+  try {
+    const { spawnSync } = await import('child_process');
+
+    // Use spawnSync with shell: false for security
+    const result = spawnSync(executable, args, {
       cwd: workingDirectory,
       encoding: 'utf-8',
       timeout,
       stdio: ['pipe', 'pipe', 'pipe'],
+      shell: false, // SECURITY: Prevent command injection
     });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    const output = (result.stdout || '') + (result.stderr || '');
 
     // Check exact output match
     if (expect !== undefined) {

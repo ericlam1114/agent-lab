@@ -190,7 +190,7 @@ function calculateSimilarity(a: string, b: string): number {
 export function fuzzyMatch(output: string, config: StringGraderConfig): GraderResult {
   const { expected, threshold = 0.8, caseSensitive = false } = config;
 
-  if (!expected) {
+  if (expected === undefined || expected === null) {
     return {
       graderId: 'fuzzy-match',
       graderType: 'fuzzy-match' as GraderType,

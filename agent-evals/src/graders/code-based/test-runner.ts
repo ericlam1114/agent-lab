@@ -3,8 +3,80 @@
  * Executes test commands and parses results
  */
 
-import { execSync, type ExecSyncOptions } from 'child_process';
+import { spawnSync } from 'child_process';
+import * as path from 'path';
 import type { GraderResult, GraderType } from '../../types';
+
+// ============================================================================
+// Security: Command Validation
+// ============================================================================
+
+/**
+ * Allowed test command executables (whitelist)
+ */
+const ALLOWED_EXECUTABLES = [
+  'npm', 'npx', 'yarn', 'pnpm',
+  'vitest', 'jest', 'mocha', 'ava', 'tap',
+  'pytest', 'python', 'python3',
+  'go', 'cargo', 'mix', 'rspec', 'bundle',
+  'dotnet', 'mvn', 'gradle',
+];
+
+/**
+ * Validate and parse a test command for safe execution
+ * Prevents command injection by using allowlist and spawn (no shell)
+ */
+function validateCommand(command: string): { executable: string; args: string[] } {
+  if (!command || typeof command !== 'string') {
+    throw new Error('Command must be a non-empty string');
+  }
+
+  // Parse command into parts (simple split - no shell interpretation)
+  const parts = command.trim().split(/\s+/);
+  const executable = parts[0];
+  const args = parts.slice(1);
+
+  // Check if executable is in allowlist
+  const baseName = path.basename(executable);
+  if (!ALLOWED_EXECUTABLES.includes(baseName) && !ALLOWED_EXECUTABLES.includes(executable)) {
+    throw new Error(
+      `Command executable "${executable}" is not allowed. ` +
+      `Allowed executables: ${ALLOWED_EXECUTABLES.join(', ')}`
+    );
+  }
+
+  // Block shell metacharacters in arguments
+  const dangerousChars = /[;&|`$(){}[\]<>\\]/;
+  for (const arg of args) {
+    if (dangerousChars.test(arg)) {
+      throw new Error(
+        `Argument "${arg}" contains potentially dangerous characters. ` +
+        `Shell metacharacters are not allowed.`
+      );
+    }
+  }
+
+  return { executable, args };
+}
+
+/**
+ * Validate working directory to prevent path traversal
+ */
+function validateWorkingDirectory(workingDirectory: string | undefined, baseDir?: string): string | undefined {
+  if (!workingDirectory) return undefined;
+
+  const resolved = path.resolve(workingDirectory);
+
+  // If baseDir is provided, ensure workingDirectory is within it
+  if (baseDir) {
+    const resolvedBase = path.resolve(baseDir);
+    if (!resolved.startsWith(resolvedBase)) {
+      throw new Error(`Working directory must be within ${baseDir}`);
+    }
+  }
+
+  return resolved;
+}
 
 // ============================================================================
 // Types
@@ -213,6 +285,7 @@ function parseTestOutput(output: string, framework?: string): Partial<TestRunRes
 
 /**
  * Run tests and parse output
+ * Uses spawn with shell: false to prevent command injection
  */
 export async function runTests(config: TestRunnerConfig): Promise<TestRunResult> {
   const {
@@ -223,24 +296,64 @@ export async function runTests(config: TestRunnerConfig): Promise<TestRunResult>
     testFramework = 'generic',
   } = config;
 
-  const execOptions: ExecSyncOptions = {
-    cwd: workingDirectory,
-    encoding: 'utf-8',
-    timeout,
-    stdio: ['pipe', 'pipe', 'pipe'],
-    env: {
-      ...process.env,
-      // Force color output for better parsing
-      FORCE_COLOR: '1',
-    },
-  };
+  // Validate and parse command (security)
+  let executable: string;
+  let args: string[];
+  try {
+    const validated = validateCommand(command);
+    executable = validated.executable;
+    args = validated.args;
+  } catch (validationError) {
+    return {
+      total: 0,
+      passed: 0,
+      failed: 1,
+      skipped: 0,
+      output: '',
+      error: validationError instanceof Error ? validationError.message : String(validationError),
+    };
+  }
+
+  // Validate working directory (security)
+  let safeWorkingDirectory: string | undefined;
+  try {
+    safeWorkingDirectory = validateWorkingDirectory(workingDirectory);
+  } catch (validationError) {
+    return {
+      total: 0,
+      passed: 0,
+      failed: 1,
+      skipped: 0,
+      output: '',
+      error: validationError instanceof Error ? validationError.message : String(validationError),
+    };
+  }
 
   let output = '';
   let error: string | undefined;
   let exitCode = 0;
 
   try {
-    output = execSync(command, execOptions) as string;
+    // Use spawnSync with shell: false for security
+    const result = spawnSync(executable, args, {
+      cwd: safeWorkingDirectory,
+      encoding: 'utf-8',
+      timeout,
+      stdio: ['pipe', 'pipe', 'pipe'],
+      shell: false, // SECURITY: Never use shell to prevent injection
+      env: {
+        ...process.env,
+        // Force color output for better parsing
+        FORCE_COLOR: '1',
+      },
+    });
+
+    output = (result.stdout || '') + (result.stderr || '');
+    exitCode = result.status ?? 0;
+
+    if (result.error) {
+      error = result.error.message;
+    }
   } catch (err) {
     // Test failures often cause non-zero exit
     if (err && typeof err === 'object' && 'stdout' in err) {
