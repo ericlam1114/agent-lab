@@ -207,3 +207,61 @@ export type GraderConfig = z.infer<typeof GraderConfigSchema>;
 export type TaskConfig = z.infer<typeof TaskConfigSchema>;
 export type EvalSettings = z.infer<typeof EvalSettingsSchema>;
 export type EvalConfig = z.infer<typeof EvalConfigSchema>;
+
+// ============================================================================
+// Config Parser
+// ============================================================================
+
+import * as yaml from 'yaml';
+
+/**
+ * Parse a YAML configuration string and validate against schema
+ */
+export function parseConfig(content: string): EvalConfig {
+  // Parse YAML
+  const parsed = yaml.parse(content);
+
+  if (!parsed || typeof parsed !== 'object') {
+    throw new Error('Invalid YAML: expected an object');
+  }
+
+  // Normalize settings field name (allow both 'settings' and 'concurrency')
+  if (parsed.settings?.concurrency && !parsed.settings?.maxConcurrency) {
+    parsed.settings.maxConcurrency = parsed.settings.concurrency;
+    delete parsed.settings.concurrency;
+  }
+
+  // Validate against schema
+  const result = EvalConfigSchema.safeParse(parsed);
+
+  if (!result.success) {
+    const errors = result.error.errors
+      .map((e) => `  - ${e.path.join('.')}: ${e.message}`)
+      .join('\n');
+    throw new Error(`Configuration validation failed:\n${errors}`);
+  }
+
+  // Apply defaults for settings
+  const config = result.data;
+  config.settings = {
+    trialsPerTask: 1,
+    maxConcurrency: 5,
+    passThreshold: 0.5,
+    timeout: 60000,
+    retries: 3,
+    stopOnFailure: false,
+    randomizeOrder: false,
+    ...config.settings,
+  };
+
+  return config;
+}
+
+/**
+ * Parse config from a file path
+ */
+export async function parseConfigFile(filePath: string): Promise<EvalConfig> {
+  const fs = await import('fs');
+  const content = fs.readFileSync(filePath, 'utf-8');
+  return parseConfig(content);
+}
