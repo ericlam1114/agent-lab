@@ -53,11 +53,43 @@ This is production code. Must be maintainable, well-tested, and follow TypeScrip
 ]
 ```
 
+## Phase 2: GUI Overhaul - Palantir Style + Promptfoo Features
+
+### Design System
+- **Style**: Palantir-inspired military/tactical look
+- **Corners**: Squared (no rounded corners)
+- **Colors**: Dark theme with high contrast, monospace fonts for data
+- **UI Reference**: promptfoo screenshots for layout inspiration
+
+```json
+[
+  {"id": 41, "category": "gui-v2", "description": "Design system - Create Tailwind theme with Palantir-style: squared corners (rounded-none), dark tactical colors (slate-900, zinc-800), accent colors (amber-500 for warnings, emerald-500 for pass, red-500 for fail), monospace fonts for data. Update tailwind.config with custom theme.", "passes": false},
+  {"id": 42, "category": "gui-v2", "description": "Navigation bar - Create top nav like promptfoo: logo, 'New Eval', 'Evals', 'Prompts', 'Datasets', 'Progress' tabs. Add user menu, settings gear icon. Fixed position, dark background.", "passes": false},
+  {"id": 43, "category": "gui-v2", "description": "New Eval page - Full GUI wizard: Step 1: Name + description, Step 2: Agent config (type dropdown, endpoint input, headers), Step 3: Add tasks with variables/prompts, Step 4: Select graders, Step 5: Review & Run. Save config to DB, not just file.", "passes": false},
+  {"id": 44, "category": "gui-v2", "description": "Eval results page - Like promptfoo: header with eval name, ID, date, model info. Severity cards (Critical/High/Medium/Low). Results matrix with Variables (rows) x Outputs (columns). Pass/fail badges with scores. Token counts, latency, cost per cell.", "passes": false},
+  {"id": 45, "category": "gui-v2", "description": "Results matrix component - Table with: Variable inputs as rows, different prompt/model outputs as columns. Each cell shows PASS/FAIL badge with score (0.92), expandable output preview, tokens count, latency, cost. Color-coded by pass rate.", "passes": false},
+  {"id": 46, "category": "gui-v2", "description": "Onboarding flow - When no evals exist: show welcome screen with 'Create your first eval' CTA, quick start guide, link to docs. When agent not configured: show setup instructions. Clear error states with actionable messages.", "passes": false},
+  {"id": 47, "category": "gui-v2", "description": "Progress page - Real-time eval progress: current task/total, progress bar, live results as they complete. WebSocket connection to backend. Show estimated time remaining. Allow cancel.", "passes": false},
+  {"id": 48, "category": "gui-v2", "description": "Dataset management - Page to create/view datasets (test cases). Import from CSV/JSON. Table view with variables. Edit inline. Use in eval wizard.", "passes": false},
+  {"id": 49, "category": "gui-v2", "description": "Prompt templates - Page to manage prompt templates with {{variables}}. Preview with sample data. Version history. Use in eval wizard.", "passes": false},
+  {"id": 50, "category": "gui-v2", "description": "Settings page - Configure: default agent endpoint, API keys (OpenAI, Anthropic), default graders, theme preferences. Store in localStorage + optional .env.", "passes": false},
+  {"id": 51, "category": "gui-v2", "description": "API routes for GUI - POST /api/evals (create eval from wizard), POST /api/evals/:id/run (start eval), GET /api/evals/:id/progress (SSE for live updates), POST /api/datasets, POST /api/prompts.", "passes": false},
+  {"id": 52, "category": "testing-v2", "description": "Browser workflow tests - Use browser-tester agent: Test complete user journey from landing → create eval → configure agent → add tasks → run eval → view results. Verify all buttons work, forms submit, data displays correctly.", "passes": false}
+]
+```
+
 ## After All Tasks Complete
 Deploy 8 subagents to validate:
 - 3 unit test subagents (run vitest, check coverage)
-- 3 browser test subagents (run Playwright tests)
+- 3 browser test subagents (run Playwright tests with REAL user workflows)
 - 2 security scanner subagents (check for vulnerabilities)
+
+**Browser tests MUST verify:**
+- User can navigate entire app
+- Create new eval wizard works end-to-end
+- Results display correctly with pass/fail badges
+- All buttons and forms are functional
+- Proper error/loading states shown
 
 Fix any failures these subagents find.
 

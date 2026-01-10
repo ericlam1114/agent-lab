@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Dashboard Page (Task 25)
- * Main dashboard with recent evals, stats, and quick actions
+ * Dashboard Page - Palantir Style (Task 41, 46)
+ * Main dashboard with recent evals, stats, quick actions, and onboarding
  */
 
 import { useEffect, useState, useCallback } from 'react';
@@ -16,169 +16,6 @@ import {
   BarChart,
   Bar,
 } from 'recharts';
-
-// ============================================================================
-// Run Eval Modal Component
-// ============================================================================
-
-interface RunEvalModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onRun: (configPath: string) => void;
-  isRunning: boolean;
-}
-
-function RunEvalModal({ isOpen, onClose, onRun, isRunning }: RunEvalModalProps) {
-  const [configPath, setConfigPath] = useState('agenteval.yaml');
-  const [activeTab, setActiveTab] = useState<'file' | 'cli'>('file');
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-zinc-800 rounded-lg shadow-xl w-full max-w-lg mx-4">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-700">
-          <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
-            Run New Evaluation
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Tabs */}
-        <div className="flex border-b border-zinc-200 dark:border-zinc-700">
-          <button
-            onClick={() => setActiveTab('file')}
-            className={`flex-1 px-4 py-3 text-sm font-medium ${
-              activeTab === 'file'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-zinc-500 hover:text-zinc-700'
-            }`}
-          >
-            Run from Config
-          </button>
-          <button
-            onClick={() => setActiveTab('cli')}
-            className={`flex-1 px-4 py-3 text-sm font-medium ${
-              activeTab === 'cli'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-zinc-500 hover:text-zinc-700'
-            }`}
-          >
-            CLI Instructions
-          </button>
-        </div>
-
-        {/* Content */}
-        <div className="p-6">
-          {activeTab === 'file' ? (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Config File Path
-                </label>
-                <input
-                  type="text"
-                  value={configPath}
-                  onChange={(e) => setConfigPath(e.target.value)}
-                  placeholder="agenteval.yaml"
-                  className="w-full px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md bg-white dark:bg-zinc-700 text-zinc-800 dark:text-zinc-100"
-                />
-                <p className="text-xs text-zinc-500 mt-1">
-                  Path to your evaluation config file (YAML or JSON)
-                </p>
-              </div>
-
-              <div className="bg-zinc-50 dark:bg-zinc-900 rounded-md p-4">
-                <h4 className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                  Example Config Structure
-                </h4>
-                <pre className="text-xs text-zinc-600 dark:text-zinc-400 overflow-x-auto">
-{`name: my-agent-eval
-agent:
-  type: http
-  endpoint: http://localhost:8000/chat
-tasks:
-  - description: Test greeting
-    input:
-      prompt: "Hello, how are you?"
-    graders:
-      - type: contains
-        value: "hello"`}
-                </pre>
-              </div>
-
-              <button
-                onClick={() => onRun(configPath)}
-                disabled={isRunning || !configPath}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isRunning ? (
-                  <>
-                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Running...
-                  </>
-                ) : (
-                  'Run Evaluation'
-                )}
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                You can also run evaluations from the command line:
-              </p>
-
-              <div className="space-y-3">
-                <div className="bg-zinc-900 rounded-md p-4">
-                  <p className="text-xs text-zinc-400 mb-1"># Initialize a new eval config</p>
-                  <code className="text-sm text-green-400">npx agenteval init</code>
-                </div>
-
-                <div className="bg-zinc-900 rounded-md p-4">
-                  <p className="text-xs text-zinc-400 mb-1"># Run evaluation</p>
-                  <code className="text-sm text-green-400">npx agenteval run --config agenteval.yaml</code>
-                </div>
-
-                <div className="bg-zinc-900 rounded-md p-4">
-                  <p className="text-xs text-zinc-400 mb-1"># View results in browser</p>
-                  <code className="text-sm text-green-400">npx agenteval view</code>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md p-4">
-                <p className="text-sm text-blue-800 dark:text-blue-300">
-                  <strong>Tip:</strong> The CLI provides more options like verbose output,
-                  parallel execution, and custom output formats.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-zinc-200 dark:border-zinc-700 flex justify-end">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 interface EvalSummary {
   id: string;
@@ -199,14 +36,140 @@ interface Stats {
   avgPassRate: number;
 }
 
+// Onboarding component for first-time users
+function OnboardingWelcome({ onCreateEval }: { onCreateEval: () => void }) {
+  return (
+    <div className="min-h-[60vh] flex items-center justify-center">
+      <div className="text-center max-w-2xl mx-auto px-6">
+        <div className="w-20 h-20 mx-auto mb-6 bg-blue-600 flex items-center justify-center">
+          <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </div>
+        <h1 className="text-3xl font-bold text-white mb-4">
+          Welcome to Agent Evals
+        </h1>
+        <p className="text-lg text-zinc-400 mb-8">
+          Evaluate your AI agents with comprehensive testing, grading, and analytics.
+          Create your first evaluation to get started.
+        </p>
+
+        <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+          <Link
+            href="/evals/new"
+            className="btn btn-primary px-8 py-3 text-base flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Create Your First Eval
+          </Link>
+          <button
+            onClick={() => window.open('https://github.com/anthropics/agent-evals', '_blank')}
+            className="btn btn-secondary px-8 py-3 text-base flex items-center justify-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            Read Documentation
+          </button>
+        </div>
+
+        {/* Quick Start Steps */}
+        <div className="card p-6 text-left">
+          <h2 className="text-lg font-semibold text-white mb-4">Quick Start Guide</h2>
+          <div className="space-y-4">
+            <div className="flex gap-4">
+              <div className="w-8 h-8 bg-blue-600 flex-shrink-0 flex items-center justify-center text-sm font-bold text-white">
+                1
+              </div>
+              <div>
+                <h3 className="font-medium text-white">Configure Your Agent</h3>
+                <p className="text-sm text-zinc-400">Set up your AI agent&apos;s HTTP endpoint and authentication</p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <div className="w-8 h-8 bg-blue-600 flex-shrink-0 flex items-center justify-center text-sm font-bold text-white">
+                2
+              </div>
+              <div>
+                <h3 className="font-medium text-white">Define Test Cases</h3>
+                <p className="text-sm text-zinc-400">Create prompts and expected outcomes for evaluation</p>
+              </div>
+            </div>
+            <div className="flex gap-4">
+              <div className="w-8 h-8 bg-blue-600 flex-shrink-0 flex items-center justify-center text-sm font-bold text-white">
+                3
+              </div>
+              <div>
+                <h3 className="font-medium text-white">Run & Analyze</h3>
+                <p className="text-sm text-zinc-400">Execute evaluations and review detailed results</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* CLI Alternative */}
+        <div className="mt-8 text-sm text-zinc-500">
+          <p>Or use the CLI:</p>
+          <code className="code-block mt-2 inline-block px-4 py-2">
+            npx agenteval init && npx agenteval run
+          </code>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Stat Card Component
+function StatCard({
+  value,
+  label,
+  color = 'default'
+}: {
+  value: string | number;
+  label: string;
+  color?: 'default' | 'pass' | 'fail' | 'running' | 'warning';
+}) {
+  const colorClasses = {
+    default: 'text-white',
+    pass: 'text-emerald-500',
+    fail: 'text-red-500',
+    running: 'text-blue-500',
+    warning: 'text-amber-500',
+  };
+
+  return (
+    <div className="card p-6">
+      <div className={`text-3xl font-bold data-value ${colorClasses[color]}`}>
+        {value}
+      </div>
+      <div className="text-sm text-zinc-500 mt-1">{label}</div>
+    </div>
+  );
+}
+
+// Status Badge Component
+function StatusBadge({ status }: { status: string }) {
+  const statusClasses: Record<string, string> = {
+    completed: 'badge-pass',
+    running: 'badge-running',
+    failed: 'badge-fail',
+    pending: 'badge-warning',
+  };
+
+  return (
+    <span className={`badge ${statusClasses[status] || 'badge-info'}`}>
+      {status}
+    </span>
+  );
+}
+
 export default function Dashboard() {
   const [evals, setEvals] = useState<EvalSummary[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showRunModal, setShowRunModal] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
-  const [runMessage, setRunMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -227,54 +190,6 @@ export default function Dashboard() {
     fetchData();
   }, [fetchData]);
 
-  const handleRunEval = async (configPath: string) => {
-    setIsRunning(true);
-    setRunMessage(null);
-
-    try {
-      const response = await fetch('/api/evals/run', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ configPath }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to start evaluation');
-      }
-
-      const data = await response.json();
-      setRunMessage({ type: 'success', text: `Evaluation "${data.name}" started successfully!` });
-      setShowRunModal(false);
-
-      // Refresh the eval list
-      setTimeout(() => {
-        fetchData();
-        setRunMessage(null);
-      }, 2000);
-    } catch (err) {
-      setRunMessage({
-        type: 'error',
-        text: err instanceof Error ? err.message : 'Failed to run evaluation'
-      });
-    } finally {
-      setIsRunning(false);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30';
-      case 'running':
-        return 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30';
-      case 'failed':
-        return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
-      default:
-        return 'text-zinc-600 bg-zinc-100 dark:text-zinc-400 dark:bg-zinc-800';
-    }
-  };
-
   const chartData = evals
     .slice()
     .reverse()
@@ -285,21 +200,24 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900">
-        <div className="text-zinc-500">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="flex items-center gap-3 text-zinc-400">
+          <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          </svg>
+          <span>Loading dashboard...</span>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 mb-4">{error}</div>
-          <button
-            onClick={fetchData}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
+          <button onClick={fetchData} className="btn btn-primary">
             Retry
           </button>
         </div>
@@ -307,189 +225,137 @@ export default function Dashboard() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">
-              Agent Evals
-            </h1>
-            <nav className="flex gap-4">
-              <Link
-                href="/evals"
-                className="text-sm text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100"
-              >
-                All Evals
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
+  // Show onboarding if no evals exist
+  if (evals.length === 0) {
+    return <OnboardingWelcome onCreateEval={() => {}} />;
+  }
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
-        {/* Stats Cards */}
+  return (
+    <div className="min-h-screen p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+            <p className="text-zinc-500 mt-1">Overview of your agent evaluations</p>
+          </div>
+          <Link href="/evals/new" className="btn btn-primary flex items-center gap-2">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            New Eval
+          </Link>
+        </div>
+
+        {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 border border-zinc-200 dark:border-zinc-700">
-            <div className="text-3xl font-bold text-zinc-800 dark:text-zinc-100">
-              {stats?.total || 0}
-            </div>
-            <div className="text-sm text-zinc-500">Total Evaluations</div>
-          </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 border border-zinc-200 dark:border-zinc-700">
-            <div className="text-3xl font-bold text-green-600">{stats?.completed || 0}</div>
-            <div className="text-sm text-zinc-500">Completed</div>
-          </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 border border-zinc-200 dark:border-zinc-700">
-            <div className="text-3xl font-bold text-blue-600">{stats?.running || 0}</div>
-            <div className="text-sm text-zinc-500">Running</div>
-          </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 border border-zinc-200 dark:border-zinc-700">
-            <div className="text-3xl font-bold text-zinc-800 dark:text-zinc-100">
-              {stats ? (stats.avgPassRate * 100).toFixed(0) : 0}%
-            </div>
-            <div className="text-sm text-zinc-500">Avg Pass Rate</div>
-          </div>
+          <StatCard value={stats?.total || 0} label="Total Evaluations" />
+          <StatCard value={stats?.completed || 0} label="Completed" color="pass" />
+          <StatCard value={stats?.running || 0} label="Running" color="running" />
+          <StatCard
+            value={stats ? `${(stats.avgPassRate * 100).toFixed(0)}%` : '0%'}
+            label="Avg Pass Rate"
+          />
         </div>
 
         {/* Chart */}
         {chartData.length > 0 && (
-          <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 border border-zinc-200 dark:border-zinc-700 mb-8">
-            <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100 mb-4">
+          <div className="card p-6 mb-8">
+            <h2 className="text-lg font-semibold text-white mb-4">
               Recent Pass Rates
             </h2>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="name" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#2d333b" />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: '#8b949e', fontSize: 12 }}
+                    axisLine={{ stroke: '#2d333b' }}
+                  />
                   <YAxis
-                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                    tick={{ fill: '#8b949e', fontSize: 12 }}
                     domain={[0, 100]}
                     tickFormatter={(value) => `${value}%`}
+                    axisLine={{ stroke: '#2d333b' }}
                   />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#1F2937',
-                      border: 'none',
-                      borderRadius: '8px',
+                      backgroundColor: '#1a1f2e',
+                      border: '1px solid #2d333b',
+                      borderRadius: '0',
                     }}
-                    labelStyle={{ color: '#F9FAFB' }}
+                    labelStyle={{ color: '#e8eaed' }}
                     formatter={(value: number) => [`${value.toFixed(1)}%`, 'Pass Rate']}
                   />
-                  <Bar dataKey="passRate" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="passRate" fill="#3b82f6" />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
         )}
 
-        {/* Status Message */}
-        {runMessage && (
-          <div className={`mb-4 p-4 rounded-lg ${
-            runMessage.type === 'success'
-              ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border border-green-200 dark:border-green-800'
-              : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
-          }`}>
-            {runMessage.text}
-          </div>
-        )}
-
-        {/* Quick Actions */}
-        <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 border border-zinc-200 dark:border-zinc-700 mb-8">
-          <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100 mb-4">
-            Quick Actions
-          </h2>
-          <div className="flex gap-4">
-            <button
-              onClick={() => setShowRunModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
-            >
-              Run New Eval
-            </button>
-            {evals[0] && (
-              <Link
-                href={`/evals/${evals[0].id}`}
-                className="px-4 py-2 border border-zinc-300 dark:border-zinc-600 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-700 text-sm"
-              >
-                View Latest
-              </Link>
-            )}
-          </div>
-        </div>
-
-        {/* Run Eval Modal */}
-        <RunEvalModal
-          isOpen={showRunModal}
-          onClose={() => setShowRunModal(false)}
-          onRun={handleRunEval}
-          isRunning={isRunning}
-        />
-
-        {/* Recent Evals */}
-        <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700">
-          <div className="px-6 py-4 border-b border-zinc-200 dark:border-zinc-700">
-            <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100">
-              Recent Evaluations
-            </h2>
-          </div>
-          <div className="divide-y divide-zinc-200 dark:divide-zinc-700">
-            {evals.length === 0 ? (
-              <div className="px-6 py-8 text-center text-zinc-500">
-                No evaluations yet. Run your first eval with{' '}
-                <code className="bg-zinc-100 dark:bg-zinc-700 px-2 py-0.5 rounded">
-                  agenteval run
-                </code>
-              </div>
-            ) : (
-              evals.map((evalItem) => (
-                <Link
-                  key={evalItem.id}
-                  href={`/evals/${evalItem.id}`}
-                  className="flex items-center justify-between px-6 py-4 hover:bg-zinc-50 dark:hover:bg-zinc-700/50"
-                >
-                  <div>
-                    <div className="font-medium text-zinc-800 dark:text-zinc-100">
-                      {evalItem.name}
-                    </div>
-                    <div className="text-sm text-zinc-500">
-                      {new Date(evalItem.createdAt).toLocaleString()} • {evalItem.totalTasks}{' '}
-                      tasks
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
-                      <div className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                        {evalItem.totalTrials > 0
-                          ? ((evalItem.passedTrials / evalItem.totalTrials) * 100).toFixed(0)
-                          : 0}
-                        %
-                      </div>
-                      <div className="text-xs text-zinc-500">pass rate</div>
-                    </div>
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${getStatusColor(evalItem.status)}`}
-                    >
-                      {evalItem.status}
-                    </span>
-                  </div>
-                </Link>
-              ))
-            )}
-          </div>
-          {evals.length > 0 && (
-            <div className="px-6 py-3 border-t border-zinc-200 dark:border-zinc-700">
-              <Link
-                href="/evals"
-                className="text-sm text-blue-600 dark:text-blue-400 hover:underline"
-              >
-                View all evaluations →
+        {/* Recent Evals Table */}
+        <div className="card">
+          <div className="px-6 py-4 border-b border-[var(--border)]">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">
+                Recent Evaluations
+              </h2>
+              <Link href="/evals" className="text-sm text-blue-500 hover:text-blue-400">
+                View all
               </Link>
             </div>
-          )}
+          </div>
+          <table className="table-tactical">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Status</th>
+                <th>Tasks</th>
+                <th>Pass Rate</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {evals.map((evalItem) => (
+                <tr key={evalItem.id}>
+                  <td>
+                    <Link
+                      href={`/evals/${evalItem.id}`}
+                      className="text-white hover:text-blue-400 font-medium"
+                    >
+                      {evalItem.name}
+                    </Link>
+                  </td>
+                  <td>
+                    <StatusBadge status={evalItem.status} />
+                  </td>
+                  <td className="data-value text-zinc-400">
+                    {evalItem.completedTasks}/{evalItem.totalTasks}
+                  </td>
+                  <td>
+                    <span className={`data-value font-semibold ${
+                      evalItem.totalTrials > 0 && (evalItem.passedTrials / evalItem.totalTrials) >= 0.8
+                        ? 'text-emerald-500'
+                        : evalItem.totalTrials > 0 && (evalItem.passedTrials / evalItem.totalTrials) >= 0.5
+                        ? 'text-amber-500'
+                        : 'text-red-500'
+                    }`}>
+                      {evalItem.totalTrials > 0
+                        ? ((evalItem.passedTrials / evalItem.totalTrials) * 100).toFixed(0)
+                        : 0}%
+                    </span>
+                  </td>
+                  <td className="text-zinc-500 text-sm">
+                    {new Date(evalItem.createdAt).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

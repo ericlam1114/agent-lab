@@ -1,26 +1,385 @@
 @import "tailwindcss";
 
+/* ============================================================================
+ * Palantir-Style Design System
+ * Military/tactical aesthetic with squared corners, dark theme, high contrast
+ * ============================================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base Colors - Dark tactical theme */
+  --background: #0f1419;
+  --background-elevated: #1a1f2e;
+  --background-card: #151b28;
+  --foreground: #e8eaed;
+  --foreground-muted: #8b949e;
+
+  /* Border Colors */
+  --border: #2d333b;
+  --border-light: #373e47;
+
+  /* Accent Colors - Military/tactical */
+  --accent-primary: #3b82f6;
+  --accent-primary-hover: #2563eb;
+
+  /* Status Colors */
+  --status-pass: #10b981;
+  --status-pass-bg: rgba(16, 185, 129, 0.15);
+  --status-fail: #ef4444;
+  --status-fail-bg: rgba(239, 68, 68, 0.15);
+  --status-warning: #f59e0b;
+  --status-warning-bg: rgba(245, 158, 11, 0.15);
+  --status-info: #3b82f6;
+  --status-info-bg: rgba(59, 130, 246, 0.15);
+  --status-running: #8b5cf6;
+  --status-running-bg: rgba(139, 92, 246, 0.15);
+
+  /* Severity Colors */
+  --severity-critical: #dc2626;
+  --severity-critical-bg: rgba(220, 38, 38, 0.15);
+  --severity-high: #ea580c;
+  --severity-high-bg: rgba(234, 88, 12, 0.15);
+  --severity-medium: #f59e0b;
+  --severity-medium-bg: rgba(245, 158, 11, 0.15);
+  --severity-low: #22c55e;
+  --severity-low-bg: rgba(34, 197, 94, 0.15);
+
+  /* Typography */
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', 'Consolas', monospace;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Force dark theme always */
+html {
+  color-scheme: dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================================
+ * Component Styles - Squared corners, tactical aesthetic
+ * ============================================================================ */
+
+/* Buttons - Squared, tactical look */
+.btn {
+  @apply px-4 py-2 text-sm font-medium transition-colors;
+  border-radius: 0;
+}
+
+.btn-primary {
+  @apply bg-blue-600 text-white;
+}
+
+.btn-primary:hover {
+  @apply bg-blue-700;
+}
+
+.btn-secondary {
+  @apply border text-zinc-300;
+  background: var(--background-elevated);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--background-card);
+  border-color: var(--border-light);
+}
+
+.btn-danger {
+  @apply bg-red-600 text-white;
+}
+
+.btn-danger:hover {
+  @apply bg-red-700;
+}
+
+/* Cards - Squared corners with subtle border */
+.card {
+  background: var(--background-card);
+  border: 1px solid var(--border);
+  border-radius: 0;
+}
+
+.card-elevated {
+  background: var(--background-elevated);
+  border: 1px solid var(--border);
+  border-radius: 0;
+}
+
+/* Inputs - Squared, tactical */
+.input {
+  @apply w-full px-3 py-2 text-sm;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  color: var(--foreground);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary);
+}
+
+.input::placeholder {
+  color: var(--foreground-muted);
+}
+
+/* Tables - Military data display style */
+.table-tactical {
+  @apply w-full text-sm;
+  border-collapse: collapse;
+}
+
+.table-tactical th {
+  @apply px-4 py-3 text-left font-semibold uppercase text-xs tracking-wider;
+  background: var(--background-elevated);
+  border-bottom: 2px solid var(--border);
+  color: var(--foreground-muted);
+}
+
+.table-tactical td {
+  @apply px-4 py-3;
+  border-bottom: 1px solid var(--border);
+}
+
+.table-tactical tr:hover td {
+  background: var(--background-elevated);
+}
+
+/* Status Badges - Squared */
+.badge {
+  @apply inline-flex items-center px-2 py-1 text-xs font-semibold uppercase tracking-wide;
+  border-radius: 0;
+}
+
+.badge-pass {
+  background: var(--status-pass-bg);
+  color: var(--status-pass);
+  border: 1px solid var(--status-pass);
+}
+
+.badge-fail {
+  background: var(--status-fail-bg);
+  color: var(--status-fail);
+  border: 1px solid var(--status-fail);
+}
+
+.badge-warning {
+  background: var(--status-warning-bg);
+  color: var(--status-warning);
+  border: 1px solid var(--status-warning);
+}
+
+.badge-running {
+  background: var(--status-running-bg);
+  color: var(--status-running);
+  border: 1px solid var(--status-running);
+}
+
+.badge-info {
+  background: var(--status-info-bg);
+  color: var(--status-info);
+  border: 1px solid var(--status-info);
+}
+
+/* Severity Cards */
+.severity-critical {
+  background: var(--severity-critical-bg);
+  border-left: 4px solid var(--severity-critical);
+}
+
+.severity-high {
+  background: var(--severity-high-bg);
+  border-left: 4px solid var(--severity-high);
+}
+
+.severity-medium {
+  background: var(--severity-medium-bg);
+  border-left: 4px solid var(--severity-medium);
+}
+
+.severity-low {
+  background: var(--severity-low-bg);
+  border-left: 4px solid var(--severity-low);
+}
+
+/* Navigation - Fixed top bar */
+.nav-bar {
+  @apply fixed top-0 left-0 right-0 z-50;
+  background: var(--background-elevated);
+  border-bottom: 1px solid var(--border);
+  height: 56px;
+}
+
+.nav-item {
+  @apply px-4 py-2 text-sm font-medium transition-colors;
+  color: var(--foreground-muted);
+}
+
+.nav-item:hover {
+  color: var(--foreground);
+  background: var(--background-card);
+}
+
+.nav-item.active {
+  color: var(--foreground);
+  border-bottom: 2px solid var(--accent-primary);
+}
+
+/* Code blocks - Monospace with tactical styling */
+.code-block {
+  @apply p-4 text-sm overflow-x-auto;
+  background: var(--background);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  font-family: var(--font-mono);
+}
+
+/* Data display - Monospace numbers */
+.data-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Progress bar - Squared */
+.progress-bar {
+  @apply h-2 overflow-hidden;
+  background: var(--background);
+  border-radius: 0;
+}
+
+.progress-bar-fill {
+  @apply h-full transition-all duration-300;
+  background: var(--accent-primary);
+  border-radius: 0;
+}
+
+/* Modal - Squared with dark overlay */
+.modal-overlay {
+  @apply fixed inset-0 z-50 flex items-center justify-center;
+  background: rgba(0, 0, 0, 0.8);
+}
+
+.modal-content {
+  @apply w-full max-w-lg mx-4;
+  background: var(--background-elevated);
+  border: 1px solid var(--border);
+  border-radius: 0;
+}
+
+/* Tabs - Tactical style */
+.tab-list {
+  @apply flex;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  @apply px-4 py-3 text-sm font-medium transition-colors;
+  color: var(--foreground-muted);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.tab:hover {
+  color: var(--foreground);
+}
+
+.tab.active {
+  color: var(--accent-primary);
+  border-bottom-color: var(--accent-primary);
+}
+
+/* Tooltips */
+.tooltip {
+  @apply absolute z-50 px-2 py-1 text-xs;
+  background: var(--background-elevated);
+  border: 1px solid var(--border);
+  border-radius: 0;
+  color: var(--foreground);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--border-light);
+}
+
+/* Selection */
+::selection {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+/* Focus rings - Squared */
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Animations */
+@keyframes pulse-tactical {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse-tactical {
+  animation: pulse-tactical 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes scan-line {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+/* Matrix-style hover effect for cells */
+.matrix-cell {
+  @apply transition-colors cursor-pointer;
+  border: 1px solid var(--border);
+}
+
+.matrix-cell:hover {
+  border-color: var(--accent-primary);
+  box-shadow: inset 0 0 20px rgba(59, 130, 246, 0.1);
+}
+
+/* Empty state styling */
+.empty-state {
+  @apply text-center py-12;
+  color: var(--foreground-muted);
+}
+
+.empty-state-icon {
+  @apply mx-auto mb-4 w-16 h-16 opacity-50;
 }

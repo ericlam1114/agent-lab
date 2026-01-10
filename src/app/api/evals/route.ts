@@ -1,12 +1,13 @@
 /**
  * API Route: /api/evals
- * List all evaluations
+ * List and create evaluations (Task 51)
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '../../../../agent-evals/src/db';
-import { evals } from '../../../../agent-evals/src/db/schema';
+import { evals, tasks } from '../../../../agent-evals/src/db/schema';
 import { desc } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function GET(request: Request) {
   try {
@@ -71,6 +72,95 @@ export async function GET(request: Request) {
     console.error('Error fetching evals:', error);
     return NextResponse.json(
       { error: 'Failed to fetch evaluations' },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST /api/evals - Create a new evaluation from wizard
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { name, description, agent, tasks: taskConfigs, graders } = body;
+
+    // Validate required fields
+    if (!name || typeof name !== 'string') {
+      return NextResponse.json(
+        { error: 'Evaluation name is required' },
+        { status: 400 }
+      );
+    }
+
+    if (!agent || !agent.endpoint) {
+      return NextResponse.json(
+        { error: 'Agent endpoint is required' },
+        { status: 400 }
+      );
+    }
+
+    const db = getDb();
+    const evalId = uuidv4();
+
+    // Create the evaluation config
+    const config = {
+      name,
+      description: description || '',
+      agent: {
+        type: agent.type || 'http',
+        endpoint: agent.endpoint,
+        headers: agent.headers || {},
+        timeout: agent.timeout || 30000,
+      },
+      graders: graders || [],
+    };
+
+    // Insert the evaluation
+    await db.insert(evals).values({
+      id: evalId,
+      name,
+      description: description || null,
+      config: JSON.stringify(config),
+      status: 'pending',
+      totalTasks: taskConfigs?.length || 0,
+      completedTasks: 0,
+      totalTrials: 0,
+      passedTrials: 0,
+      createdAt: new Date().toISOString(),
+    });
+
+    // Insert tasks if provided
+    if (taskConfigs && Array.isArray(taskConfigs)) {
+      for (let i = 0; i < taskConfigs.length; i++) {
+        const taskConfig = taskConfigs[i];
+        const taskId = uuidv4();
+
+        await db.insert(tasks).values({
+          id: taskId,
+          evalId,
+          description: taskConfig.description || `Task ${i + 1}`,
+          type: 'prompt',
+          input: JSON.stringify({
+            prompt: taskConfig.input || '',
+            variables: taskConfig.variables || {},
+          }),
+          graders: JSON.stringify(graders || []),
+          metrics: JSON.stringify({}),
+        });
+      }
+    }
+
+    return NextResponse.json({
+      id: evalId,
+      name,
+      status: 'pending',
+      message: 'Evaluation created successfully',
+    });
+  } catch (error) {
+    console.error('Error creating evaluation:', error);
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to create evaluation' },
       { status: 500 }
     );
   }
