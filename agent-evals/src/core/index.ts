@@ -2,5 +2,23 @@
  * Core evaluation engine exports
  */
 
-// Will export: Evaluator, TaskRunner, TrialManager, Transcript
-export {};
+// Task Runner
+export {
+  TaskRunner,
+  TaskError,
+  TaskTimeoutError,
+  TaskExecutionError,
+  createTaskRunner,
+  type TaskResult,
+  type TaskMetrics,
+  type TaskErrorInfo,
+} from './task-runner';
+
+// Transcript (to be implemented)
+// export { Transcript } from './transcript';
+
+// Evaluator (to be implemented)
+// export { Evaluator } from './evaluator';
+
+// Trial Manager (to be implemented)
+// export { TrialManager } from './trial-manager';
