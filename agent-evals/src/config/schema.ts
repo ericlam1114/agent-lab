@@ -165,6 +165,52 @@ export const TaskConfigSchema = z.object({
 });
 
 // ============================================================================
+// Optimizer Configuration (DSPy-style prompt optimization)
+// ============================================================================
+
+export const OptimizationStrategySchema = z.enum([
+  'bootstrap',  // Bootstrap few-shot: collect successful examples
+  'mipro',      // MIPRO-style: LLM generates improved prompts
+  'random',     // Random perturbations
+]);
+
+export const OptimizationMetricSchema = z.enum([
+  'pass_rate',  // Overall pass rate
+  'pass_at_1',  // Pass@1 (single attempt success)
+  'pass_at_k',  // Pass@k (k attempts success)
+  'avg_score',  // Average grader score
+]);
+
+export const OptimizerConfigSchema = z.object({
+  /** Whether optimization is enabled */
+  enabled: z.boolean().default(false),
+  /** Optimization strategy */
+  strategy: OptimizationStrategySchema.default('mipro'),
+  /** Metric to optimize for */
+  metric: OptimizationMetricSchema.default('pass_rate'),
+  /** Number of optimization iterations/generations */
+  iterations: z.number().int().min(1).max(20).default(5),
+  /** Number of candidate prompts per round */
+  candidatesPerRound: z.number().int().min(1).max(10).default(3),
+  /** For pass@k metric, the value of k */
+  kValue: z.number().int().min(1).max(10).default(1),
+  /** Maximum few-shot examples to bootstrap */
+  maxFewShotExamples: z.number().int().min(1).max(20).default(5),
+  /** Temperature for LLM-based prompt generation */
+  temperature: z.number().min(0).max(2).default(0.7),
+  /** Early stopping threshold (stop if metric exceeds this) */
+  earlyStopThreshold: z.number().min(0).max(1).optional(),
+  /** Model to use for MIPRO-style generation */
+  model: z.string().default('claude-3-haiku-20240307'),
+  /** Whether to save all candidates or just the best */
+  saveAllCandidates: z.boolean().default(false),
+  /** Dataset ID to use for optimization (if not specified, uses eval tasks) */
+  datasetId: z.string().optional(),
+  /** Prompt ID to optimize (if not specified, uses eval prompt) */
+  promptId: z.string().optional(),
+});
+
+// ============================================================================
 // Evaluation Settings
 // ============================================================================
 
@@ -190,6 +236,7 @@ export const EvalConfigSchema = z.object({
   agent: AgentConfigSchema,
   tasks: z.array(TaskConfigSchema).min(1),
   settings: EvalSettingsSchema.optional(),
+  optimizer: OptimizerConfigSchema.optional(),
   metadata: z.record(z.unknown()).optional(),
 });
 
@@ -206,6 +253,9 @@ export type GraderType = z.infer<typeof GraderTypeSchema>;
 export type GraderConfig = z.infer<typeof GraderConfigSchema>;
 export type TaskConfig = z.infer<typeof TaskConfigSchema>;
 export type EvalSettings = z.infer<typeof EvalSettingsSchema>;
+export type OptimizationStrategy = z.infer<typeof OptimizationStrategySchema>;
+export type OptimizationMetric = z.infer<typeof OptimizationMetricSchema>;
+export type OptimizerConfig = z.infer<typeof OptimizerConfigSchema>;
 export type EvalConfig = z.infer<typeof EvalConfigSchema>;
 
 // ============================================================================

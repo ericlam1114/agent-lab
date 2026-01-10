@@ -40,14 +40,14 @@ interface Stats {
 function OnboardingWelcome({ onCreateEval }: { onCreateEval: () => void }) {
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
-      <div className="text-center max-w-2xl mx-auto px-6">
+      <div className="text-center max-w-2xl mx-auto px-6 ">
         {/* <div className="w-20 h-20 mx-auto mb-6 bg-blue-600 flex items-center justify-center"> */}
           {/* <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg> */}
         {/* </div> */}
-        <h1 className="text-3xl font-bold text-white mb-4">
-          Welcome to Agent Evals
+        <h1 className="text-3xl font-bold text-black mb-4 mt-12">
+          Welcome to Agent Lab
         </h1>
         <p className="text-lg text-zinc-400 mb-8">
           Evaluate your AI agents with comprehensive testing, grading, and analytics.
@@ -76,35 +76,26 @@ function OnboardingWelcome({ onCreateEval }: { onCreateEval: () => void }) {
         </div>
 
         {/* Quick Start Steps */}
-        <div className="card p-6 text-left">
-          <h2 className="text-lg font-semibold text-white mb-4">Quick Start Guide</h2>
+        <div className="card p-6  items-center justify-center flex flex-col text-center ">
+          <h2 className="text-lg font-semibold text-black mb-4 ">Quick Start Guide</h2>
           <div className="space-y-4">
-            <div className="flex gap-4">
+            <div className="flex items-center gap-4">
               <div className="w-8 h-8 bg-blue-600 flex-shrink-0 flex items-center justify-center text-sm font-bold text-white">
                 1
               </div>
-              <div>
-                <h3 className="font-medium text-white">Configure Your Agent</h3>
-                <p className="text-sm text-zinc-400">Set up your AI agent&apos;s HTTP endpoint and authentication</p>
-              </div>
+              <p className="text-sm text-zinc-400">Set up your AI agent&apos;s HTTP endpoint and authentication</p>
             </div>
-            <div className="flex gap-4">
+            <div className="flex items-center gap-4">
               <div className="w-8 h-8 bg-blue-600 flex-shrink-0 flex items-center justify-center text-sm font-bold text-white">
                 2
               </div>
-              <div>
-                <h3 className="font-medium text-white">Define Test Cases</h3>
-                <p className="text-sm text-zinc-400">Create prompts and expected outcomes for evaluation</p>
-              </div>
+              <p className="text-sm text-zinc-400">Create prompts and expected outcomes for evaluation</p>
             </div>
-            <div className="flex gap-4">
+            <div className="flex items-center gap-4">
               <div className="w-8 h-8 bg-blue-600 flex-shrink-0 flex items-center justify-center text-sm font-bold text-white">
                 3
               </div>
-              <div>
-                <h3 className="font-medium text-white">Run & Analyze</h3>
-                <p className="text-sm text-zinc-400">Execute evaluations and review detailed results</p>
-              </div>
+              <p className="text-sm text-zinc-400">Execute evaluations and review detailed results</p>
             </div>
           </div>
         </div>
