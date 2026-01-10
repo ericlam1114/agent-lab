@@ -2,5 +2,13 @@
  * Human review graders
  */
 
-// Will export: HumanReviewQueue
-export {};
+// Human Review Queue
+export {
+  HumanReviewQueue,
+  createHumanReviewQueue,
+  humanReviewGrader,
+  type HumanReviewConfig,
+  type HumanReview,
+  type HumanReviewSubmission,
+  type HumanReviewListOptions,
+} from './review-queue';
