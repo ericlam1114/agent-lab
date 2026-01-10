@@ -208,3 +208,35 @@
 
 ---
 
+## Task 7: Basic Evaluator - COMPLETED
+
+**Files created:**
+- agent-evals/src/core/evaluator.ts - Evaluator class with:
+  - run() - Main evaluation orchestration
+  - runTasksWithConcurrency() - Promise pool for concurrent execution
+  - runSingleTask() - Execute individual task with grading
+  - runGraders() - Execute graders (placeholder for Tasks 9-16)
+  - saveEval(), saveTaskResult() - Database persistence
+  - Progress callback support for real-time updates
+
+**Files modified:**
+- agent-evals/src/core/index.ts - Export Evaluator and related types
+- agent-evals/src/index.ts - Export Evaluator from main module
+
+**Key features:**
+- Configurable concurrency with Promise pool pattern
+- Progress callback for real-time updates
+- Full database persistence (evals, tasks, trials, results)
+- Placeholder grader integration ready for Tasks 9-16
+- Factory functions: createEvaluator(), runEvaluation()
+
+**Verification:**
+- npm run build: PASSED
+- npm run lint: PASSED
+
+**Notes for next iteration:**
+- Task 8 adds TrialManager for multiple trials per task
+- TrialManager will implement pass@k and pass^k metrics
+
+---
+

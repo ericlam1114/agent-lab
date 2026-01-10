@@ -24,8 +24,17 @@ export {
   type TranscriptData,
 } from './transcript';
 
-// Evaluator (to be implemented)
-// export { Evaluator } from './evaluator';
+// Evaluator
+export {
+  Evaluator,
+  createEvaluator,
+  runEvaluation,
+  type EvaluatorConfig,
+  type EvaluatorResult,
+  type TaskEvalResult,
+  type EvalProgress,
+  type ProgressCallback,
+} from './evaluator';
 
 // Trial Manager (to be implemented)
 // export { TrialManager } from './trial-manager';

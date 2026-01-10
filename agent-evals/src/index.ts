@@ -31,7 +31,7 @@ export {
   type EvalResult,
   type EvalSummary,
   type EvalMetrics,
-  type EvalProgress,
+  type EvalProgress as TypesEvalProgress,
   type EvalEvent,
 } from './types';
 
@@ -53,6 +53,15 @@ export {
   type ToolCallRecord,
   type ToolResultRecord,
   type TranscriptData,
+  // Evaluator
+  Evaluator,
+  createEvaluator,
+  runEvaluation,
+  type EvaluatorConfig,
+  type EvaluatorResult,
+  type TaskEvalResult,
+  type EvalProgress,
+  type ProgressCallback,
 } from './core';
 
 // Graders
