@@ -44,3 +44,37 @@
 
 ---
 
+## Task 2: Database Schema - COMPLETED
+
+**Files created:**
+- agent-evals/src/db/schema.ts - Drizzle ORM schema with tables:
+  - evals: Top-level evaluation runs
+  - tasks: Individual test cases
+  - trials: Attempts at tasks
+  - results: Grader results per trial
+  - humanReviews: Human review queue
+- agent-evals/src/db/connection.ts - SQLite connection with better-sqlite3
+- agent-evals/src/db/migrate.ts - Migration script to create tables
+- drizzle.config.ts - Drizzle configuration
+
+**Files modified:**
+- agent-evals/src/db/index.ts - Updated exports
+- agent-evals/src/index.ts - Fixed export naming conflicts (DbTrial, DbTask, etc.)
+
+**Key decisions:**
+- Used SQLite with better-sqlite3 for simplicity and portability
+- WAL mode enabled for better concurrent performance
+- Database stored in .agentevals/evals.db by default
+- Added humanReviews table for human grader queue
+- DB types prefixed with Db (DbTrial, DbTask) to avoid conflicts with types.ts
+
+**Verification:**
+- npm run build: PASSED
+- npm run lint: PASSED
+
+**Notes for next iteration:**
+- Task 3 creates config parser using Zod schemas
+- Reuse types from types.ts where possible
+
+---
+

@@ -7,7 +7,7 @@
  * @packageDocumentation
  */
 
-// Core types
+// Core types (primary types for the framework)
 export * from './types';
 
 // Core evaluation engine
@@ -22,5 +22,40 @@ export * from './providers';
 // Agent-type specific evaluators
 export * from './agent-types';
 
-// Database
-export * from './db';
+// Database - export selectively to avoid naming conflicts with types.ts
+export {
+  // Connection
+  getDb,
+  closeDb,
+  resetDb,
+  getSqlite,
+  type DbOptions,
+  // Migrations
+  runMigrations,
+  // Schema tables
+  evals,
+  tasks,
+  trials,
+  results,
+  humanReviews,
+  // Relations
+  evalsRelations,
+  tasksRelations,
+  trialsRelations,
+  resultsRelations,
+  humanReviewsRelations,
+} from './db';
+
+// Re-export DB types with Db prefix to avoid conflicts
+export type {
+  Eval as DbEval,
+  NewEval,
+  Task as DbTask,
+  NewTask,
+  Trial as DbTrial,
+  NewTrial,
+  Result as DbResult,
+  NewResult,
+  HumanReview as DbHumanReview,
+  NewHumanReview,
+} from './db';
