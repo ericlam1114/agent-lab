@@ -60,18 +60,23 @@ Inspired by tools like [promptfoo](https://github.com/promptfoo/promptfoo) and [
 
 ## Quick Start
 
-The fastest way to get started:
+The fastest way to get started is with the Web GUI:
 
 ```bash
-# Initialize a new evaluation config
-npx agenteval init
+# Clone and install
+git clone https://github.com/yourusername/agent-lab.git
+cd agent-lab
+npm install
 
-# Run the evaluation
-npx agenteval run
+# Set up the database
+npm run db:generate
+npm run db:migrate
 
-# Open the web GUI to view results
-npx agenteval view
+# Start the web interface
+npm run dev
 ```
+
+Open `http://localhost:3000` and click **Create Your First Eval**. The wizard walks you through everything.
 
 ## Installation
 
@@ -80,20 +85,7 @@ npx agenteval view
 - Node.js 18 or higher
 - npm, yarn, or pnpm
 
-### Install via npm
-
-```bash
-# Install globally
-npm install -g agenteval
-
-# Or as a dev dependency
-npm install --save-dev agenteval
-
-# Or use npx (no install required)
-npx agenteval init
-```
-
-### From Source
+### From Source (Recommended)
 
 ```bash
 # Clone the repository
@@ -113,29 +105,7 @@ npm run dev
 
 ## Usage
 
-### CLI Commands
-
-```bash
-# Initialize a new evaluation config (creates agenteval.yaml)
-npx agenteval init
-
-# Run an evaluation
-npx agenteval run
-
-# Run with specific config file
-npx agenteval run --config my-eval.yaml
-
-# Run with increased concurrency
-npx agenteval run --concurrency 5
-
-# Start the web GUI
-npx agenteval view
-
-# View on a specific port
-npx agenteval view --port 8080
-```
-
-### Web GUI
+### Web GUI (Recommended)
 
 The web interface provides:
 
@@ -151,6 +121,24 @@ Start the GUI:
 ```bash
 npm run dev
 # Then open http://localhost:3000
+```
+
+### CLI (Experimental)
+
+> **Note:** The CLI is experimental and works only when running from the source repository. Some graders have placeholder implementations. Use the Web GUI for the best experience.
+
+```bash
+# Initialize a new evaluation config (creates agenteval.yaml)
+npm run agenteval -- init
+
+# Run an evaluation
+npm run agenteval -- run
+
+# Run with specific config file
+npm run agenteval -- run --config my-eval.yaml
+
+# Run with increased concurrency
+npm run agenteval -- run --concurrency 5
 ```
 
 ## Configuration

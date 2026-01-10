@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error: `Config file not found: ${configPath}`,
-          hint: 'Create a config file with "npx agenteval init" or provide the correct path'
+          hint: 'Create a config file with "npm run agenteval -- init" or provide the correct path'
         },
         { status: 404 }
       );
@@ -43,10 +43,10 @@ export async function POST(request: NextRequest) {
       status: 'instructions',
       name: configPath,
       message: 'To run evaluations, use the CLI command',
-      command: `npx agenteval run --config ${configPath}`,
+      command: `npm run agenteval -- run --config ${configPath}`,
       instructions: [
         'Open a terminal in your project directory',
-        `Run: npx agenteval run --config ${configPath}`,
+        `Run: npm run agenteval -- run --config ${configPath}`,
         'The results will appear in this dashboard automatically'
       ]
     });

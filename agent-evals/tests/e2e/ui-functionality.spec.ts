@@ -337,7 +337,7 @@ test.describe('Run Eval Modal', () => {
     await page.locator('button:has-text("CLI Instructions")').click();
 
     // Check for CLI commands
-    const initCommand = page.locator('text=npx agenteval init');
+    const initCommand = page.locator('text=npm run agenteval -- init');
     await expect(initCommand).toBeVisible();
   });
 

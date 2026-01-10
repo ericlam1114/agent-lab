@@ -2,7 +2,29 @@
 
 Agent Lab is a framework for evaluating AI agents systematically. You define tasks with graders. The framework runs your agent against them. You get pass/fail results with scores.
 
-This guide walks you through your first evaluation. We'll set up a config, define test cases, and run them against your agent.
+## Recommended: Use the Web GUI
+
+The fastest way to get started is with the web interface:
+
+```bash
+npm install
+npm run dev
+```
+
+Open `http://localhost:3000` and click **Create Your First Eval**. The wizard walks you through:
+1. Naming your evaluation
+2. Configuring your agent endpoint
+3. Adding test cases
+4. Selecting graders
+5. Running and viewing results
+
+This is the fully functional, battle-tested path.
+
+---
+
+## Alternative: CLI (Experimental)
+
+The CLI exists but has limitations. The graders are partially implemented - some work, some are placeholders. Use it for experimentation, not production.
 
 I'm assuming you have Node.js 18+ and the repo cloned locally.
 
@@ -204,4 +226,4 @@ export async function customGrader(
 
 ---
 
-Next: Run `npm run agenteval -- init` to get started.
+**Recommended next step:** Open `http://localhost:3000` after running `npm run dev` and create your first evaluation through the GUI.

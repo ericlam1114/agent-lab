@@ -53,7 +53,7 @@ function GettingStartedContent() {
     <div>
       <h1 className="docs-heading">Getting Started</h1>
       <p className="docs-paragraph">
-        Agent Evals is a comprehensive framework for evaluating AI agents. Whether you&apos;re building
+        Agent Evals is a framework for evaluating AI agents. Whether you&apos;re building
         a coding assistant, customer support bot, or research agent, this tool helps you measure
         and improve your agent&apos;s performance.
       </p>
@@ -62,83 +62,65 @@ function GettingStartedContent() {
       <ul className="list-disc list-inside mb-6 space-y-2 text-[var(--foreground-muted)]">
         <li>Node.js 18 or higher</li>
         <li>npm or yarn</li>
-        <li>An AI agent with an HTTP endpoint (optional for getting started)</li>
+        <li>This repository cloned locally</li>
       </ul>
 
       <h2 className="docs-subheading">Installation</h2>
-      <p className="docs-paragraph">Install Agent Evals globally or as a dev dependency:</p>
-      <CodeBlock code={`# Using npx (recommended)
-npx agenteval init
+      <p className="docs-paragraph">Clone the repo and install dependencies:</p>
+      <CodeBlock code={`git clone <repo-url>
+cd agent-lab
+npm install`} language="bash" />
 
-# Or install globally
-npm install -g agenteval
-
-# Or as a dev dependency
-npm install --save-dev agenteval`} language="bash" />
-
-      <h2 className="docs-subheading">Quick Start</h2>
+      <h2 className="docs-subheading">Quick Start (Recommended)</h2>
       <p className="docs-paragraph">
-        The fastest way to get started is using the interactive init command:
+        The fastest way to get started is using the Web GUI:
       </p>
 
       <div className="space-y-4">
         <div className="card p-4">
-          <h3 className="font-semibold mb-2">Step 1: Initialize your project</h3>
-          <CodeBlock code="npx agenteval init" language="bash" />
+          <h3 className="font-semibold mb-2">Step 1: Start the dev server</h3>
+          <CodeBlock code="npm run dev" language="bash" />
           <p className="text-sm text-[var(--foreground-muted)] mt-2">
-            This creates an <code className="docs-code-inline">agenteval.yaml</code> config file with example tasks.
+            Open <code className="docs-code-inline">http://localhost:3000</code> in your browser.
           </p>
         </div>
 
         <div className="card p-4">
-          <h3 className="font-semibold mb-2">Step 2: Configure your agent</h3>
-          <CodeBlock code={`# agenteval.yaml
-name: my-first-eval
-agent:
-  type: http
-  endpoint: https://api.example.com/chat
-  headers:
-    Authorization: Bearer $API_KEY
-  timeout: 30000`} />
+          <h3 className="font-semibold mb-2">Step 2: Create your first evaluation</h3>
+          <p className="text-sm text-[var(--foreground-muted)]">
+            Click <Link href="/evals/new" className="text-[var(--accent-primary)] hover:underline">New Eval</Link> and follow the 5-step wizard:
+          </p>
+          <ol className="list-decimal list-inside mt-2 text-sm text-[var(--foreground-muted)]">
+            <li>Name your evaluation</li>
+            <li>Configure your agent endpoint</li>
+            <li>Add test cases with prompts</li>
+            <li>Select graders (contains, regex, LLM rubric, etc.)</li>
+            <li>Review and run</li>
+          </ol>
         </div>
 
         <div className="card p-4">
-          <h3 className="font-semibold mb-2">Step 3: Add test cases</h3>
-          <CodeBlock code={`tasks:
-  - description: Test greeting response
-    input:
-      prompt: "Hello, how are you?"
-    graders:
-      - type: contains
-        value: "hello"
-      - type: llm-rubric
-        rubric: "Response should be friendly and professional"`} />
-        </div>
-
-        <div className="card p-4">
-          <h3 className="font-semibold mb-2">Step 4: Run the evaluation</h3>
-          <CodeBlock code="npx agenteval run" language="bash" />
-        </div>
-
-        <div className="card p-4">
-          <h3 className="font-semibold mb-2">Step 5: View results</h3>
-          <CodeBlock code="npx agenteval view" language="bash" />
-          <p className="text-sm text-[var(--foreground-muted)] mt-2">
-            This opens the web GUI where you can explore detailed results, transcripts, and metrics.
+          <h3 className="font-semibold mb-2">Step 3: View results</h3>
+          <p className="text-sm text-[var(--foreground-muted)]">
+            Results appear in real-time as tasks complete. You&apos;ll see pass rates, individual task scores, and detailed grader feedback.
           </p>
         </div>
       </div>
 
-      <h2 className="docs-subheading">Using the GUI</h2>
+      <h2 className="docs-subheading">Key Features</h2>
+      <ul className="list-disc list-inside mb-6 space-y-2 text-[var(--foreground-muted)]">
+        <li><strong>Datasets:</strong> Create reusable test datasets at <Link href="/datasets" className="text-[var(--accent-primary)] hover:underline">/datasets</Link></li>
+        <li><strong>Prompts:</strong> Manage prompt templates with variables at <Link href="/prompts" className="text-[var(--accent-primary)] hover:underline">/prompts</Link></li>
+        <li><strong>Trends:</strong> Track performance over time at <Link href="/trends" className="text-[var(--accent-primary)] hover:underline">/trends</Link></li>
+        <li><strong>Optimization:</strong> Auto-improve prompts at <Link href="/optimize" className="text-[var(--accent-primary)] hover:underline">/optimize</Link></li>
+        <li><strong>Comparison:</strong> A/B test prompts at <Link href="/compare" className="text-[var(--accent-primary)] hover:underline">/compare</Link></li>
+      </ul>
+
+      <h2 className="docs-subheading">CLI (Experimental)</h2>
       <p className="docs-paragraph">
-        You can also create and run evaluations entirely from the web interface:
+        A CLI exists for local use but is experimental. See the <button className="text-[var(--accent-primary)] hover:underline" onClick={() => {}}>CLI Reference</button> for details.
+        For production workflows, use the GUI.
       </p>
-      <ol className="list-decimal list-inside mb-6 space-y-2 text-[var(--foreground-muted)]">
-        <li>Navigate to <Link href="/evals/new" className="text-[var(--accent-primary)] hover:underline">New Eval</Link></li>
-        <li>Follow the 5-step wizard to configure your evaluation</li>
-        <li>Click &quot;Run Evaluation&quot; to start</li>
-        <li>View real-time progress and results</li>
-      </ol>
     </div>
   );
 }
@@ -460,50 +442,55 @@ function CLIContent() {
   return (
     <div>
       <h1 className="docs-heading">CLI Reference</h1>
+
+      <div className="card p-4 mb-6 bg-amber-900/20 border border-amber-800">
+        <h3 className="font-semibold text-amber-400 mb-2">Experimental</h3>
+        <p className="text-sm text-amber-300">
+          The CLI is experimental and only works locally within this project. Use <code className="docs-code-inline">npm run agenteval</code> instead of <code className="docs-code-inline">npx agenteval</code>.
+          Some graders are placeholder implementations. <strong>For production use, we recommend the Web GUI.</strong>
+        </p>
+      </div>
+
       <p className="docs-paragraph">
-        The Agent Evals CLI provides commands for initializing, running, and viewing evaluations.
+        The CLI provides commands for initializing, running, and viewing evaluations from the terminal.
       </p>
 
       <h2 className="docs-subheading">agenteval init</h2>
       <p className="docs-paragraph">Initialize a new evaluation project.</p>
-      <CodeBlock code={`# Interactive mode
-npx agenteval init
+      <CodeBlock code={`# Interactive mode (local only)
+npm run agenteval -- init
 
 # With options
-npx agenteval init --name "my-eval" --agent-type http
+npm run agenteval -- init --name "my-eval" --type coding --endpoint http://localhost:3000/api/agent
 
 # Options:
 #   --name        Evaluation name
-#   --agent-type  Agent type (http, websocket, custom)
+#   --type        Agent type (coding, conversational, research, computer-use)
 #   --endpoint    Agent endpoint URL
 #   --output      Output file path (default: agenteval.yaml)`} language="bash" />
 
       <h2 className="docs-subheading">agenteval run</h2>
       <p className="docs-paragraph">Run an evaluation.</p>
       <CodeBlock code={`# Run with default config
-npx agenteval run
+npm run agenteval -- run
 
 # Run with specific config
-npx agenteval run --config ./my-eval.yaml
+npm run agenteval -- run --config ./my-eval.yaml
 
 # Options:
 #   --config, -c    Config file path (default: agenteval.yaml)
 #   --verbose, -v   Verbose output
 #   --quiet, -q     Minimal output (for CI)
-#   --no-cache      Disable result caching
+#   --trials        Number of trials per task
 #   --concurrency   Number of parallel tasks
-#   --output        Output format (json, table, markdown)
-#   --output-file   Save results to file`} language="bash" />
+#   --save          Save results to file`} language="bash" />
 
       <h2 className="docs-subheading">agenteval view</h2>
-      <p className="docs-paragraph">Launch the web GUI to view results.</p>
-      <CodeBlock code={`# Start GUI server
-npx agenteval view
+      <p className="docs-paragraph">Launch the web GUI. (Prefer using <code className="docs-code-inline">npm run dev</code> directly.)</p>
+      <CodeBlock code={`# Just use the dev server directly
+npm run dev
 
-# Options:
-#   --port, -p     Server port (default: 3000)
-#   --eval-id      Show specific evaluation
-#   --no-open      Don't auto-open browser`} language="bash" />
+# Opens at http://localhost:3000`} language="bash" />
 
       <h2 className="docs-subheading">CI/CD Integration</h2>
       <p className="docs-paragraph">Example GitHub Actions workflow:</p>
@@ -530,7 +517,7 @@ jobs:
         run: npm ci
 
       - name: Run evaluations
-        run: npx agenteval run --quiet --output json --output-file results.json
+        run: npm run agenteval -- run --quiet --output json --output-file results.json
         env:
           OPENAI_API_KEY: \${{ secrets.OPENAI_API_KEY }}
 
@@ -700,13 +687,33 @@ function CICDContent() {
   return (
     <div>
       <h1 className="docs-heading">CI/CD Integration</h1>
+
+      <div className="card p-4 mb-6 bg-amber-900/20 border border-amber-800">
+        <h3 className="font-semibold text-amber-400 mb-2">Work In Progress</h3>
+        <p className="text-sm text-amber-300">
+          CI/CD integration requires a properly packaged CLI tool. The current CLI is experimental
+          and runs via <code className="docs-code-inline">npm run agenteval</code> locally only.
+          The examples below show the intended architecture for when the CLI is production-ready.
+        </p>
+      </div>
+
       <p className="docs-paragraph">
-        Integrate Agent Evals into your CI/CD pipeline to automatically run evaluations on every commit,
+        The goal is to integrate Agent Evals into your CI/CD pipeline to automatically run evaluations on every commit,
         detect regressions, and gate deployments based on performance thresholds.
       </p>
 
-      <h2 className="docs-subheading">GitHub Actions</h2>
-      <p className="docs-paragraph">Complete workflow for running evaluations on push and pull requests:</p>
+      <h2 className="docs-subheading">Current Options</h2>
+      <p className="docs-paragraph">
+        For now, you can integrate with CI/CD by:
+      </p>
+      <ul className="list-disc list-inside mb-6 space-y-2 text-[var(--foreground-muted)]">
+        <li><strong>API-based:</strong> Call the <code className="docs-code-inline">/api/evals</code> endpoints from your CI scripts</li>
+        <li><strong>Local CLI:</strong> Run <code className="docs-code-inline">npm run agenteval -- run</code> in your repo (requires the full project)</li>
+        <li><strong>Manual:</strong> Use the web GUI for evaluation before merging</li>
+      </ul>
+
+      <h2 className="docs-subheading">Future: GitHub Actions</h2>
+      <p className="docs-paragraph">When the CLI is packaged, workflows will look like:</p>
       <CodeBlock code={`# .github/workflows/agent-eval.yml
 name: Agent Evaluation
 
@@ -738,7 +745,7 @@ jobs:
       - name: Run agent evaluations
         id: eval
         run: |
-          npx agenteval run --quiet --output json --output-file results.json
+          npm run agenteval -- run --quiet --output json --output-file results.json
           echo "pass_rate=$(jq -r '.metrics.passRate' results.json)" >> $GITHUB_OUTPUT
           echo "pass_at_1=$(jq -r '.metrics.passAt1' results.json)" >> $GITHUB_OUTPUT
 
@@ -794,7 +801,7 @@ agent-eval:
   image: node:20
   script:
     - npm ci
-    - npx agenteval run --quiet --output json --output-file results.json
+    - npm run agenteval -- run --quiet --output json --output-file results.json
     - |
       PASS_RATE=$(jq -r '.metrics.passRate' results.json)
       echo "Pass Rate: $PASS_RATE"
@@ -837,7 +844,7 @@ jobs:
         run: npm ci
 
       - name: Run evaluation
-        run: npx agenteval run --output json --output-file current.json
+        run: npm run agenteval -- run --output json --output-file current.json
 
       - name: Download baseline
         uses: actions/download-artifact@v4
@@ -892,7 +899,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm ci
-      - run: npx agenteval run --config evals/support-eval.yaml
+      - run: npm run agenteval -- run --config evals/support-eval.yaml
 
   eval-code:
     if: contains(github.event.head_commit.modified, 'src/agents/code/')
@@ -900,7 +907,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm ci
-      - run: npx agenteval run --config evals/code-eval.yaml`} language="yaml" />
+      - run: npm run agenteval -- run --config evals/code-eval.yaml`} language="yaml" />
 
       <h2 className="docs-subheading">Deployment Gates</h2>
       <p className="docs-paragraph">
@@ -921,7 +928,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: npm ci
-      - run: npx agenteval run --output json --output-file results.json
+      - run: npm run agenteval -- run --output json --output-file results.json
 
       - id: check
         run: |
@@ -973,7 +980,7 @@ jobs:
       - run: npm ci
 
       - name: Run full evaluation suite
-        run: npx agenteval run --config evals/full-suite.yaml --output json --output-file daily-results.json
+        run: npm run agenteval -- run --config evals/full-suite.yaml --output json --output-file daily-results.json
 
       - name: Upload to dashboard
         run: |

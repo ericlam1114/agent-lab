@@ -213,7 +213,7 @@ export default function ProgressPage() {
             </svg>
             <div className="text-sm text-blue-300">
               <strong>Tip:</strong> You can also run evaluations from the command line with{' '}
-              <code className="bg-blue-900/50 px-1">npx agenteval run</code> and view progress here.
+              <code className="bg-blue-900/50 px-1">npm run agenteval -- run</code> and view progress here.
             </div>
           </div>
         </div>
