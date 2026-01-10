@@ -15,15 +15,15 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  {
-    label: 'Dashboard',
-    href: '/',
-    icon: (
-      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-      </svg>
-    ),
-  },
+  // {
+  //   label: 'Dashboard',
+  //   href: '/',
+  //   icon: (
+  //     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  //       <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+  //     </svg>
+  //   ),
+  // },
   {
     label: 'New Eval',
     href: '/evals/new',
@@ -70,6 +70,24 @@ const navItems: NavItem[] = [
       </svg>
     ),
   },
+  {
+    label: 'Trends',
+    href: '/trends',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4v16" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Docs',
+    href: '/docs',
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+      </svg>
+    ),
+  },
 ];
 
 export default function NavBar() {
@@ -91,7 +109,7 @@ export default function NavBar() {
             </svg>
           </div>
           <span className="text-lg font-bold tracking-tight text-white">
-            AGENT<span className="text-blue-500">EVAL</span>
+            AGENT<span className="text-blue-500 font-extrabold text-lg">LAB</span>
           </span>
         </Link>
 
@@ -124,7 +142,7 @@ export default function NavBar() {
             </svg>
           </Link>
           <div className="w-8 h-8 bg-zinc-700 flex items-center justify-center text-sm font-medium text-zinc-300">
-            U
+            User
           </div>
         </div>
       </div>

@@ -53,28 +53,85 @@ This is production code. Must be maintainable, well-tested, and follow TypeScrip
 ]
 ```
 
-## Phase 2: GUI Overhaul - Palantir Style + Promptfoo Features
+## Phase 2: GUI Overhaul - Palantir Foundry Style
 
-### Design System
-- **Style**: Palantir-inspired military/tactical look
-- **Corners**: Squared (no rounded corners)
-- **Colors**: Dark theme with high contrast, monospace fonts for data
-- **UI Reference**: promptfoo screenshots for layout inspiration
+### Design System Reference (from Palantir screenshots)
+- **Layout**: Left sidebar for navigation/filters, main content area with widgets, optional right panel for details
+- **Header**: Light/dark header bar with breadcrumbs, action buttons (Save, Publish), version indicator
+- **Colors**:
+  - Background: White/light gray (#f8fafc) for main areas
+  - Cards: White with subtle borders
+  - Data: Green (#22c55e), Purple (#8b5cf6), Blue (#3b82f6), Teal (#14b8a6)
+  - Status badges: Colored backgrounds with matching text (teal "640-730" style)
+- **Charts**: Horizontal stacked bar charts, clean data visualization
+- **Tables**: Clean rows with colored badge cells, monospace numbers
+- **Forms**: Clean inputs with labels, dropdowns, clear submit buttons
+- **Tabs**: Underline-style tab navigation within pages
 
 ```json
 [
-  {"id": 41, "category": "gui-v2", "description": "Design system - Create Tailwind theme with Palantir-style: squared corners (rounded-none), dark tactical colors (slate-900, zinc-800), accent colors (amber-500 for warnings, emerald-500 for pass, red-500 for fail), monospace fonts for data. Update tailwind.config with custom theme.", "passes": false},
-  {"id": 42, "category": "gui-v2", "description": "Navigation bar - Create top nav like promptfoo: logo, 'New Eval', 'Evals', 'Prompts', 'Datasets', 'Progress' tabs. Add user menu, settings gear icon. Fixed position, dark background.", "passes": false},
-  {"id": 43, "category": "gui-v2", "description": "New Eval page - Full GUI wizard: Step 1: Name + description, Step 2: Agent config (type dropdown, endpoint input, headers), Step 3: Add tasks with variables/prompts, Step 4: Select graders, Step 5: Review & Run. Save config to DB, not just file.", "passes": false},
-  {"id": 44, "category": "gui-v2", "description": "Eval results page - Like promptfoo: header with eval name, ID, date, model info. Severity cards (Critical/High/Medium/Low). Results matrix with Variables (rows) x Outputs (columns). Pass/fail badges with scores. Token counts, latency, cost per cell.", "passes": false},
-  {"id": 45, "category": "gui-v2", "description": "Results matrix component - Table with: Variable inputs as rows, different prompt/model outputs as columns. Each cell shows PASS/FAIL badge with score (0.92), expandable output preview, tokens count, latency, cost. Color-coded by pass rate.", "passes": false},
-  {"id": 46, "category": "gui-v2", "description": "Onboarding flow - When no evals exist: show welcome screen with 'Create your first eval' CTA, quick start guide, link to docs. When agent not configured: show setup instructions. Clear error states with actionable messages.", "passes": false},
-  {"id": 47, "category": "gui-v2", "description": "Progress page - Real-time eval progress: current task/total, progress bar, live results as they complete. WebSocket connection to backend. Show estimated time remaining. Allow cancel.", "passes": false},
-  {"id": 48, "category": "gui-v2", "description": "Dataset management - Page to create/view datasets (test cases). Import from CSV/JSON. Table view with variables. Edit inline. Use in eval wizard.", "passes": false},
-  {"id": 49, "category": "gui-v2", "description": "Prompt templates - Page to manage prompt templates with {{variables}}. Preview with sample data. Version history. Use in eval wizard.", "passes": false},
-  {"id": 50, "category": "gui-v2", "description": "Settings page - Configure: default agent endpoint, API keys (OpenAI, Anthropic), default graders, theme preferences. Store in localStorage + optional .env.", "passes": false},
-  {"id": 51, "category": "gui-v2", "description": "API routes for GUI - POST /api/evals (create eval from wizard), POST /api/evals/:id/run (start eval), GET /api/evals/:id/progress (SSE for live updates), POST /api/datasets, POST /api/prompts.", "passes": false},
-  {"id": 52, "category": "testing-v2", "description": "Browser workflow tests - Use browser-tester agent: Test complete user journey from landing → create eval → configure agent → add tasks → run eval → view results. Verify all buttons work, forms submit, data displays correctly.", "passes": false}
+  {"id": 41, "category": "gui-v2", "description": "Design system - Create Palantir Foundry-inspired theme: light background (#f8fafc), white cards with borders, squared corners throughout, horizontal stacked bar charts, colored status badges (teal, purple, green). Left sidebar navigation with collapsible sections. Monospace fonts for data values.", "passes": true},
+  {"id": 42, "category": "gui-v2", "description": "Navigation bar - Create top nav with: logo, breadcrumb navigation, action buttons (Save, Run), version indicator. Left sidebar with collapsible sections for filtering. Settings gear and user avatar on right.", "passes": true},
+  {"id": 43, "category": "gui-v2", "description": "New Eval page - Full GUI wizard: Step 1: Name + description, Step 2: Agent config (type dropdown, endpoint input, headers), Step 3: Add tasks with variables/prompts, Step 4: Select graders, Step 5: Review & Run. Save config to DB, not just file.", "passes": true},
+  {"id": 44, "category": "gui-v2", "description": "Eval results page - Palantir-style dashboard: header with eval name/ID/date, horizontal stacked bar charts showing pass/fail distribution, data table with colored score badges, right panel for selected item details.", "passes": true},
+  {"id": 45, "category": "gui-v2", "description": "Results matrix component - Table with colored badge cells like Palantir (teal '640-730' style). Each cell shows score with color coding. Click to expand shows full details. Horizontal bar charts for visual comparison.", "passes": true},
+  {"id": 46, "category": "gui-v2", "description": "Onboarding flow - When no evals exist: show welcome screen with 'Create your first eval' CTA, quick start guide, link to docs. When agent not configured: show setup instructions. Clear error states with actionable messages.", "passes": true},
+  {"id": 47, "category": "gui-v2", "description": "Progress page - Real-time eval progress: current task/total, progress bar, live results as they complete. WebSocket connection to backend. Show estimated time remaining. Allow cancel.", "passes": true},
+  {"id": 48, "category": "gui-v2", "description": "Dataset management - Page to create/view datasets (test cases). Import from CSV/JSON. Table view with variables. Edit inline. Use in eval wizard.", "passes": true},
+  {"id": 49, "category": "gui-v2", "description": "Prompt templates - Page to manage prompt templates with {{variables}}. Preview with sample data. Version history. Use in eval wizard.", "passes": true},
+  {"id": 50, "category": "gui-v2", "description": "Settings page - Configure: default agent endpoint, API keys (OpenAI, Anthropic), default graders, theme preferences. Store in localStorage + optional .env.", "passes": true},
+  {"id": 51, "category": "gui-v2", "description": "API routes for GUI - POST /api/evals (create eval from wizard), POST /api/evals/:id/run (start eval), GET /api/evals/:id/progress (SSE for live updates), POST /api/datasets, POST /api/prompts.", "passes": true},
+  {"id": 52, "category": "testing-v2", "description": "Browser workflow tests - Use browser-tester agent: Test complete user journey from landing → create eval → configure agent → add tasks → run eval → view results. Verify all buttons work, forms submit, data displays correctly.", "passes": true}
+]
+```
+
+## Phase 3: Comprehensive Documentation
+
+### Documentation Requirements
+Users should be able to click "Read Documentation" and immediately understand:
+- What Agent Evals does and why they need it
+- How to get started in 5 minutes
+- Complete API reference for all graders
+- Advanced configuration options
+- Troubleshooting common issues
+
+```json
+[
+  {"id": 53, "category": "docs", "description": "Documentation page - Create /docs route with full documentation. Include: sidebar navigation with sections, search functionality, code examples with syntax highlighting, copy-to-clipboard for code blocks. Use MDX or similar for content.", "passes": true},
+  {"id": 54, "category": "docs", "description": "Getting Started guide - Write comprehensive quickstart: Prerequisites (Node.js, npm), Installation (npx agenteval init), First Evaluation walkthrough, Understanding Results. Include screenshots and code examples.", "passes": true},
+  {"id": 55, "category": "docs", "description": "Configuration Reference - Document all config options: YAML schema with examples, agent types and their options, task configuration, grader configuration, environment variables. Provide copy-pasteable examples.", "passes": true},
+  {"id": 56, "category": "docs", "description": "Graders Documentation - Document each grader type: String Match (exact, contains, regex, fuzzy), JSON Validator, State Checker, Test Runner, LLM Rubric, Factuality, Similarity. Include when to use each, config options, examples.", "passes": true},
+  {"id": 57, "category": "docs", "description": "Agent Types guide - Document specialized evaluators: Coding Agent (test pass, static analysis, code quality), Conversational Agent (user simulation, tone analysis), Research Agent (groundedness, coverage), Computer Use Agent (visual diff, state verification).", "passes": true},
+  {"id": 58, "category": "docs", "description": "CLI Reference - Document all CLI commands: agenteval init (options, examples), agenteval run (flags, output formats), agenteval view (port configuration). Include common workflows and CI/CD integration.", "passes": true},
+  {"id": 59, "category": "docs", "description": "API Reference - Document REST API endpoints: GET /api/evals (list), POST /api/evals (create), GET /api/evals/:id (detail), POST /api/evals/:id/run (execute). Include request/response schemas, error codes.", "passes": true},
+  {"id": 60, "category": "docs", "description": "Troubleshooting guide - Document common issues: Connection errors, Timeout configuration, API key setup, Database errors, Grader failures. Include solutions and debugging steps.", "passes": true},
+  {"id": 61, "category": "docs", "description": "Best Practices guide - Document: Writing effective test cases, Choosing graders, Performance optimization, Cost management (LLM calls), Organizing evaluations at scale.", "passes": true},
+  {"id": 62, "category": "docs", "description": "Examples library - Create /docs/examples with complete eval configs: Customer Support Bot eval, Code Generation eval, Research Assistant eval, Multi-turn Conversation eval. Each with full YAML and expected results.", "passes": true}
+]
+```
+
+## Phase 4: Iteration & Optimization System
+
+### Capabilities (inspired by DSPy and Anthropic's eval best practices)
+- Persist datasets and prompts to database with versioning
+- Track regression baselines and detect capability changes
+- Auto-prompt optimization that iterates against eval metrics
+- Trend dashboard showing capability evolution over time
+
+```json
+[
+  {"id": 63, "category": "persistence", "description": "Database schema for datasets/prompts - Add tables: datasets (id, name, description, variables, createdAt, updatedAt), dataset_rows (id, datasetId, data JSON), prompts (id, name, description, template, variables, version, createdAt). Add migrations.", "passes": true},
+  {"id": 64, "category": "persistence", "description": "Migrate datasets API to database - Update /api/datasets to use Drizzle ORM instead of in-memory storage. Support CRUD operations, pagination, search. Add import/export CSV and JSON.", "passes": true},
+  {"id": 65, "category": "persistence", "description": "Migrate prompts API to database - Update /api/prompts to use Drizzle ORM. Add version history tracking - each edit creates new version, can view/restore previous versions. Link prompts to evals that use them.", "passes": true},
+  {"id": 66, "category": "regression", "description": "Baseline tracking - Add baselines table (id, name, evalId, metrics JSON, createdAt). API to mark an eval as baseline. Compare any eval against baseline showing metric deltas (pass rate, pass@k, latency).", "passes": true},
+  {"id": 67, "category": "regression", "description": "Regression detection - Create regression checker that compares current eval to baseline. Flag regressions when: pass rate drops >5%, pass@1 drops >10%, latency increases >20%. Add alerts to eval results page.", "passes": true},
+  {"id": 68, "category": "regression", "description": "Trend dashboard page - Create /trends page showing: pass rate over time (line chart), pass@k evolution, latency trends, cost per eval. Filter by eval suite, date range. Export data.", "passes": true},
+  {"id": 69, "category": "optimizer", "description": "Prompt optimizer core - Create agent-evals/src/optimizer/prompt-optimizer.ts. DSPy-inspired optimizer that: generates candidate prompts, runs eval on each, scores by metric (pass@k, pass rate), selects best, iterates. Support bootstrap few-shot and MIPRO-style optimization.", "passes": false},
+  {"id": 70, "category": "optimizer", "description": "Optimizer config schema - Add optimizer section to eval config: type (bootstrap|mipro|random), metric (pass_rate|pass_at_k|score), iterations, candidates_per_round, few_shot_examples. Validate with Zod.", "passes": false},
+  {"id": 71, "category": "optimizer", "description": "Optimizer UI - Add /optimize page: select eval suite, choose optimization strategy, set parameters, run optimization. Show progress with live metrics. Display best prompt with diff from original. Save optimized prompt.", "passes": false},
+  {"id": 72, "category": "optimizer", "description": "A/B comparison - Create comparison view: run same tasks with two different prompts side-by-side. Show per-task results, aggregate metrics, statistical significance. Help identify which prompt variant is better.", "passes": false},
+  {"id": 73, "category": "integration", "description": "Eval suite management - Create /suites page to group related evals. Define suite with name, description, tasks, baselines. Run entire suite with one click. Track suite-level metrics over time.", "passes": false},
+  {"id": 74, "category": "integration", "description": "CI/CD integration docs - Add docs section on CI integration: GitHub Actions workflow example, exit codes for pass/fail, JSON output for parsing, baseline comparison in PR checks, regression alerts.", "passes": false}
 ]
 ```
 
@@ -90,6 +147,7 @@ Deploy 8 subagents to validate:
 - Results display correctly with pass/fail badges
 - All buttons and forms are functional
 - Proper error/loading states shown
+- Documentation is accessible and searchable
 
 Fix any failures these subagents find.
 

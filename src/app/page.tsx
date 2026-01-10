@@ -41,11 +41,11 @@ function OnboardingWelcome({ onCreateEval }: { onCreateEval: () => void }) {
   return (
     <div className="min-h-[60vh] flex items-center justify-center">
       <div className="text-center max-w-2xl mx-auto px-6">
-        <div className="w-20 h-20 mx-auto mb-6 bg-blue-600 flex items-center justify-center">
-          <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* <div className="w-20 h-20 mx-auto mb-6 bg-blue-600 flex items-center justify-center"> */}
+          {/* <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        </div>
+          </svg> */}
+        {/* </div> */}
         <h1 className="text-3xl font-bold text-white mb-4">
           Welcome to Agent Evals
         </h1>
@@ -64,15 +64,15 @@ function OnboardingWelcome({ onCreateEval }: { onCreateEval: () => void }) {
             </svg>
             Create Your First Eval
           </Link>
-          <button
-            onClick={() => window.open('https://github.com/anthropics/agent-evals', '_blank')}
+          <Link
+            href="/docs"
             className="btn btn-secondary px-8 py-3 text-base flex items-center justify-center gap-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
             </svg>
             Read Documentation
-          </button>
+          </Link>
         </div>
 
         {/* Quick Start Steps */}

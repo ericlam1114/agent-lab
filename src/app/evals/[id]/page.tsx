@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * Eval Detail Page (Task 27)
- * Detailed view of a specific evaluation
+ * Eval Detail Page (Task 27, 67)
+ * Detailed view of a specific evaluation with regression alerts
  */
 
 import { useEffect, useState, use, useCallback } from 'react';
@@ -63,6 +63,46 @@ interface Metrics {
   avgLatencyMs: number;
 }
 
+interface Baseline {
+  id: string;
+  name: string;
+  evalId: string;
+  isDefault: boolean;
+  createdAt: string;
+  metrics: {
+    passRate: number;
+    passAtK: Record<number, number>;
+    latency: { avg: number; p50: number; p95: number; p99: number };
+    tokens: { total: number; prompt: number; completion: number };
+  };
+}
+
+interface RegressionDetail {
+  metric: string;
+  message: string;
+  severity: 'critical' | 'warning' | 'info';
+  current: number;
+  baseline: number;
+  percentChange: number;
+}
+
+interface RegressionComparison {
+  hasRegressions: boolean;
+  regressionCount: number;
+  improvementCount: number;
+  summary: {
+    regressions: string[];
+    improvements: string[];
+  };
+  passRate: {
+    current: number;
+    baseline: number;
+    delta: number;
+    percentChange: number;
+    isRegression: boolean;
+  };
+}
+
 export default function EvalDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [evalData, setEvalData] = useState<EvalData | null>(null);
@@ -71,6 +111,14 @@ export default function EvalDetailPage({ params }: { params: Promise<{ id: strin
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedTrial, setSelectedTrial] = useState<Trial | null>(null);
+
+  // Regression tracking state
+  const [baselines, setBaselines] = useState<Baseline[]>([]);
+  const [selectedBaseline, setSelectedBaseline] = useState<string>('');
+  const [comparison, setComparison] = useState<RegressionComparison | null>(null);
+  const [comparingRegression, setComparingRegression] = useState(false);
+  const [showBaselineModal, setShowBaselineModal] = useState(false);
+  const [newBaselineName, setNewBaselineName] = useState('');
 
   const fetchEvalData = useCallback(async () => {
     try {
@@ -91,9 +139,80 @@ export default function EvalDetailPage({ params }: { params: Promise<{ id: strin
     }
   }, [id]);
 
+  const fetchBaselines = useCallback(async () => {
+    try {
+      const response = await fetch('/api/baselines');
+      if (response.ok) {
+        const data = await response.json();
+        setBaselines(data.baselines || []);
+        // Auto-select default baseline if available
+        const defaultBaseline = data.baselines?.find((b: Baseline) => b.isDefault);
+        if (defaultBaseline) {
+          setSelectedBaseline(defaultBaseline.id);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to fetch baselines:', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchEvalData();
-  }, [fetchEvalData]);
+    fetchBaselines();
+  }, [fetchEvalData, fetchBaselines]);
+
+  // Compare against baseline when selection changes
+  useEffect(() => {
+    if (selectedBaseline && evalData) {
+      compareToBaseline();
+    } else {
+      setComparison(null);
+    }
+  }, [selectedBaseline, evalData]);
+
+  const compareToBaseline = async () => {
+    if (!selectedBaseline) return;
+
+    setComparingRegression(true);
+    try {
+      const response = await fetch('/api/baselines/compare', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ evalId: id, baselineId: selectedBaseline }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setComparison(data);
+      }
+    } catch (err) {
+      console.error('Failed to compare:', err);
+    } finally {
+      setComparingRegression(false);
+    }
+  };
+
+  const createBaseline = async () => {
+    try {
+      const response = await fetch('/api/baselines', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          evalId: id,
+          name: newBaselineName || `Baseline from ${evalData?.name}`,
+          isDefault: baselines.length === 0,
+        }),
+      });
+
+      if (response.ok) {
+        setShowBaselineModal(false);
+        setNewBaselineName('');
+        fetchBaselines();
+      }
+    } catch (err) {
+      console.error('Failed to create baseline:', err);
+    }
+  };
 
   const handleExport = (format: 'json' | 'csv' | 'markdown') => {
     if (!evalData || !tasks) return;
@@ -103,7 +222,7 @@ export default function EvalDetailPage({ params }: { params: Promise<{ id: strin
     let mimeType: string;
 
     if (format === 'json') {
-      content = JSON.stringify({ eval: evalData, tasks, metrics }, null, 2);
+      content = JSON.stringify({ eval: evalData, tasks, metrics, comparison }, null, 2);
       filename = `${evalData.name}-${id}.json`;
       mimeType = 'application/json';
     } else if (format === 'csv') {
@@ -127,7 +246,14 @@ export default function EvalDetailPage({ params }: { params: Promise<{ id: strin
 - **Total Tasks:** ${metrics?.totalTasks || 0}
 - **Avg Latency:** ${metrics ? metrics.avgLatencyMs.toFixed(0) : 0}ms
 - **Created:** ${evalData.createdAt}
-
+${comparison ? `
+## Regression Analysis
+- **Has Regressions:** ${comparison.hasRegressions ? 'Yes' : 'No'}
+- **Regressions:** ${comparison.regressionCount}
+- **Improvements:** ${comparison.improvementCount}
+${comparison.summary.regressions.map(r => `- ⚠️ ${r}`).join('\n')}
+${comparison.summary.improvements.map(i => `- ✅ ${i}`).join('\n')}
+` : ''}
 ## Task Results
 
 | Task | Description | Score | Pass Rate |
@@ -155,7 +281,7 @@ ${tasks.map((t) => `| ${t.id} | ${t.description} | ${(t.avgScore * 100).toFixed(
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-zinc-500">Loading...</div>
       </div>
     );
@@ -163,7 +289,7 @@ ${tasks.map((t) => `| ${t.id} | ${t.description} | ${(t.avgScore * 100).toFixed(
 
   if (error || !evalData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-900">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-red-500 mb-4">{error || 'Evaluation not found'}</div>
           <Link href="/evals" className="text-blue-600 hover:underline">
@@ -174,99 +300,153 @@ ${tasks.map((t) => `| ${t.id} | ${t.description} | ${(t.avgScore * 100).toFixed(
     );
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30';
-      case 'running':
-        return 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30';
-      case 'failed':
-        return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
-      default:
-        return 'text-zinc-600 bg-zinc-100 dark:text-zinc-400 dark:bg-zinc-800';
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-900">
-      {/* Header */}
-      <header className="bg-white dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700">
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link
-                href="/evals"
-                className="text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
-              >
-                ← Back
-              </Link>
-              <div>
-                <h1 className="text-2xl font-bold text-zinc-800 dark:text-zinc-100">
-                  {evalData.name}
-                </h1>
-                {evalData.description && (
-                  <p className="text-sm text-zinc-500">{evalData.description}</p>
-                )}
-              </div>
+    <div className="min-h-screen p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-4">
+            <Link href="/evals" className="text-zinc-500 hover:text-zinc-700">
+              ← Back
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-[var(--foreground)]">{evalData.name}</h1>
+              {evalData.description && (
+                <p className="text-sm text-[var(--foreground-muted)]">{evalData.description}</p>
+              )}
             </div>
-            <div className="flex items-center gap-3">
-              <span
-                className={`px-3 py-1 rounded text-sm font-medium ${getStatusColor(evalData.status)}`}
-              >
-                {evalData.status}
-              </span>
-            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className={`badge ${evalData.status === 'completed' ? 'badge-pass' : evalData.status === 'running' ? 'badge-running' : 'badge-fail'}`}>
+              {evalData.status}
+            </span>
+            <button
+              onClick={() => setShowBaselineModal(true)}
+              className="btn btn-secondary"
+            >
+              Set as Baseline
+            </button>
           </div>
         </div>
-      </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+        {/* Regression Alert Banner */}
+        {comparison && comparison.hasRegressions && (
+          <div className="card p-4 mb-6 border-l-4 border-red-500 bg-red-50">
+            <div className="flex items-start gap-3">
+              <div className="text-red-500 text-xl">⚠️</div>
+              <div>
+                <h3 className="font-semibold text-red-800">Regression Detected</h3>
+                <p className="text-sm text-red-700 mt-1">
+                  {comparison.regressionCount} regression{comparison.regressionCount !== 1 ? 's' : ''} found compared to baseline.
+                </p>
+                <ul className="mt-2 space-y-1">
+                  {comparison.summary.regressions.map((reg, i) => (
+                    <li key={i} className="text-sm text-red-700">• {reg}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Improvement Banner */}
+        {comparison && !comparison.hasRegressions && comparison.improvementCount > 0 && (
+          <div className="card p-4 mb-6 border-l-4 border-green-500 bg-green-50">
+            <div className="flex items-start gap-3">
+              <div className="text-green-500 text-xl">✅</div>
+              <div>
+                <h3 className="font-semibold text-green-800">Improvements Detected</h3>
+                <p className="text-sm text-green-700 mt-1">
+                  {comparison.improvementCount} improvement{comparison.improvementCount !== 1 ? 's' : ''} compared to baseline.
+                </p>
+                <ul className="mt-2 space-y-1">
+                  {comparison.summary.improvements.map((imp, i) => (
+                    <li key={i} className="text-sm text-green-700">• {imp}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Baseline Selector */}
+        <div className="card p-4 mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <label className="text-sm font-medium text-[var(--foreground)]">Compare to Baseline:</label>
+              <select
+                value={selectedBaseline}
+                onChange={(e) => setSelectedBaseline(e.target.value)}
+                className="input w-64"
+              >
+                <option value="">No comparison</option>
+                {baselines.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name} {b.isDefault ? '(Default)' : ''}
+                  </option>
+                ))}
+              </select>
+              {comparingRegression && (
+                <span className="text-sm text-zinc-500">Comparing...</span>
+              )}
+            </div>
+            {comparison && (
+              <div className="flex items-center gap-2 text-sm">
+                <span className={`px-2 py-1 rounded ${comparison.hasRegressions ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                  {comparison.hasRegressions ? '⚠️ Regressed' : '✓ No Regressions'}
+                </span>
+                {comparison.passRate && (
+                  <span className={`px-2 py-1 rounded ${comparison.passRate.delta >= 0 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                    Pass Rate: {comparison.passRate.delta >= 0 ? '+' : ''}{(comparison.passRate.percentChange).toFixed(1)}%
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Metrics */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 border border-zinc-200 dark:border-zinc-700">
-            <div className="text-3xl font-bold text-zinc-800 dark:text-zinc-100">
+          <div className="card p-6">
+            <div className="text-3xl font-bold data-value text-[var(--foreground)]">
               {metrics ? (metrics.passRate * 100).toFixed(0) : 0}%
             </div>
-            <div className="text-sm text-zinc-500">Pass Rate</div>
+            <div className="text-sm text-[var(--foreground-muted)]">Pass Rate</div>
+            {comparison && comparison.passRate && (
+              <div className={`text-xs mt-1 ${comparison.passRate.delta >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {comparison.passRate.delta >= 0 ? '↑' : '↓'} {Math.abs(comparison.passRate.percentChange).toFixed(1)}% vs baseline
+              </div>
+            )}
           </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 border border-zinc-200 dark:border-zinc-700">
-            <div className="text-3xl font-bold text-zinc-800 dark:text-zinc-100">
+          <div className="card p-6">
+            <div className="text-3xl font-bold data-value text-[var(--foreground)]">
               {metrics?.totalTasks || 0}
             </div>
-            <div className="text-sm text-zinc-500">Tasks</div>
+            <div className="text-sm text-[var(--foreground-muted)]">Tasks</div>
           </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 border border-zinc-200 dark:border-zinc-700">
-            <div className="text-3xl font-bold text-zinc-800 dark:text-zinc-100">
+          <div className="card p-6">
+            <div className="text-3xl font-bold data-value text-[var(--foreground)]">
               {metrics?.totalTrials || 0}
             </div>
-            <div className="text-sm text-zinc-500">Trials</div>
+            <div className="text-sm text-[var(--foreground-muted)]">Trials</div>
           </div>
-          <div className="bg-white dark:bg-zinc-800 rounded-lg p-6 border border-zinc-200 dark:border-zinc-700">
-            <div className="text-3xl font-bold text-zinc-800 dark:text-zinc-100">
+          <div className="card p-6">
+            <div className="text-3xl font-bold data-value text-[var(--foreground)]">
               {metrics ? metrics.avgLatencyMs.toFixed(0) : 0}ms
             </div>
-            <div className="text-sm text-zinc-500">Avg Latency</div>
+            <div className="text-sm text-[var(--foreground-muted)]">Avg Latency</div>
           </div>
         </div>
 
         {/* Export Actions */}
         <div className="flex gap-3 mb-6">
-          <button
-            onClick={() => handleExport('json')}
-            className="px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-700"
-          >
+          <button onClick={() => handleExport('json')} className="btn btn-secondary">
             Export JSON
           </button>
-          <button
-            onClick={() => handleExport('csv')}
-            className="px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-700"
-          >
+          <button onClick={() => handleExport('csv')} className="btn btn-secondary">
             Export CSV
           </button>
-          <button
-            onClick={() => handleExport('markdown')}
-            className="px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-700"
-          >
+          <button onClick={() => handleExport('markdown')} className="btn btn-secondary">
             Export Markdown
           </button>
           <button
@@ -274,15 +454,15 @@ ${tasks.map((t) => `| ${t.id} | ${t.description} | ${(t.avgScore * 100).toFixed(
               const url = `${window.location.origin}/evals/${id}`;
               navigator.clipboard.writeText(url);
             }}
-            className="px-4 py-2 text-sm border border-zinc-300 dark:border-zinc-600 rounded-md hover:bg-zinc-100 dark:hover:bg-zinc-700"
+            className="btn btn-secondary"
           >
             Copy Link
           </button>
         </div>
 
         {/* Results Table */}
-        <div className="bg-white dark:bg-zinc-800 rounded-lg border border-zinc-200 dark:border-zinc-700 p-6 mb-8">
-          <h2 className="text-lg font-semibold text-zinc-800 dark:text-zinc-100 mb-4">
+        <div className="card p-6 mb-8">
+          <h2 className="text-lg font-semibold text-[var(--foreground)] mb-4">
             Task Results
           </h2>
           <ResultsTable tasks={tasks} onTrialClick={handleTrialClick} />
@@ -290,14 +470,11 @@ ${tasks.map((t) => `| ${t.id} | ${t.description} | ${(t.avgScore * 100).toFixed(
 
         {/* Transcript Viewer Modal */}
         {selectedTrial && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white dark:bg-zinc-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-zinc-700">
+          <div className="modal-overlay" onClick={() => setSelectedTrial(null)}>
+            <div className="modal-content max-w-4xl" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border)]">
                 <h3 className="text-lg font-semibold">Trial Transcript</h3>
-                <button
-                  onClick={() => setSelectedTrial(null)}
-                  className="text-zinc-500 hover:text-zinc-700"
-                >
+                <button onClick={() => setSelectedTrial(null)} className="text-zinc-500 hover:text-zinc-700">
                   ✕
                 </button>
               </div>
@@ -314,7 +491,42 @@ ${tasks.map((t) => `| ${t.id} | ${t.description} | ${(t.avgScore * 100).toFixed(
             </div>
           </div>
         )}
-      </main>
+
+        {/* Create Baseline Modal */}
+        {showBaselineModal && (
+          <div className="modal-overlay" onClick={() => setShowBaselineModal(false)}>
+            <div className="modal-content max-w-md" onClick={(e) => e.stopPropagation()}>
+              <div className="px-6 py-4 border-b border-[var(--border)]">
+                <h3 className="text-lg font-semibold">Create Baseline</h3>
+              </div>
+              <div className="p-6">
+                <p className="text-sm text-[var(--foreground-muted)] mb-4">
+                  Save this evaluation&apos;s metrics as a baseline for future regression tracking.
+                </p>
+                <label className="block text-sm font-medium mb-2">Baseline Name</label>
+                <input
+                  type="text"
+                  value={newBaselineName}
+                  onChange={(e) => setNewBaselineName(e.target.value)}
+                  placeholder={`Baseline from ${evalData.name}`}
+                  className="input w-full mb-4"
+                />
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowBaselineModal(false)}
+                    className="btn btn-secondary"
+                  >
+                    Cancel
+                  </button>
+                  <button onClick={createBaseline} className="btn btn-primary">
+                    Create Baseline
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
