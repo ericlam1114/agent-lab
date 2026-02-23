@@ -1,3 +1,5 @@
+<!-- Cost tracking test - please ignore -->
+
 <p align="center">
   <img src="docs/screenshots/dashboard-welcome.png" alt="Agent Lab Dashboard" width="800"/>
 </p>
