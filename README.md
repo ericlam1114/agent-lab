@@ -1,4 +1,4 @@
-<!-- Cost tracking test - please ignore -->
+<!-- providerCost v3 test - please ignore -->
 
 <p align="center">
   <img src="docs/screenshots/dashboard-welcome.png" alt="Agent Lab Dashboard" width="800"/>
