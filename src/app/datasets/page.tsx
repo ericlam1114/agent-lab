@@ -146,16 +146,36 @@ export default function DatasetsPage() {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [rowCountFilter, setRowCountFilter] = useState<'all' | 'empty' | 'small' | 'large'>('all');
 
   useEffect(() => {
     fetchDatasets();
-  }, []);
+  }, [searchQuery, rowCountFilter]);
 
   const fetchDatasets = async () => {
     try {
-      const response = await fetch('/api/datasets');
+      const params = new URLSearchParams();
+      
+      if (searchQuery) {
+        params.append('search', searchQuery);
+      }
+
+      const response = await fetch(`/api/datasets?${params.toString()}`);
       const data = await response.json();
-      setDatasets(data.datasets || []);
+      
+      // Apply client-side row count filtering
+      let filteredDatasets = data.datasets || [];
+      
+      if (rowCountFilter === 'empty') {
+        filteredDatasets = filteredDatasets.filter((d: Dataset) => d.rows.length === 0);
+      } else if (rowCountFilter === 'small') {
+        filteredDatasets = filteredDatasets.filter((d: Dataset) => d.rows.length > 0 && d.rows.length < 100);
+      } else if (rowCountFilter === 'large') {
+        filteredDatasets = filteredDatasets.filter((d: Dataset) => d.rows.length >= 100);
+      }
+      
+      setDatasets(filteredDatasets);
     } catch (error) {
       console.error('Failed to fetch datasets:', error);
     } finally {
@@ -207,6 +227,40 @@ export default function DatasetsPage() {
           </button>
         </div>
 
+        {/* Search and Filter Bar */}
+        <div className="mb-6 flex gap-4 items-center">
+          <div className="flex-1 relative">
+            <svg 
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-500" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search datasets by name..."
+              className="input pl-10 w-full"
+            />
+          </div>
+          
+          <div className="w-48">
+            <select
+              value={rowCountFilter}
+              onChange={(e) => setRowCountFilter(e.target.value as 'all' | 'empty' | 'small' | 'large')}
+              className="input w-full"
+            >
+              <option value="all">All datasets</option>
+              <option value="empty">Empty (0 rows)</option>
+              <option value="small">Small (&lt;100 rows)</option>
+              <option value="large">Large (100+ rows)</option>
+            </select>
+          </div>
+        </div>
+
         {/* Datasets Grid or Empty State */}
         {datasets.length === 0 ? (
           <div className="empty-state">
@@ -216,11 +270,29 @@ export default function DatasetsPage() {
                 <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={1.5} d="M4 12h16" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-white mb-2">No datasets yet</h3>
-            <p className="text-zinc-500 mb-6">Create a dataset to define test variables and values</p>
-            <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
-              Create Your First Dataset
-            </button>
+            {searchQuery || rowCountFilter !== 'all' ? (
+              <>
+                <h3 className="text-lg font-medium text-white mb-2">No datasets found</h3>
+                <p className="text-zinc-500 mb-6">Try adjusting your search or filter criteria</p>
+                <button 
+                  onClick={() => {
+                    setSearchQuery('');
+                    setRowCountFilter('all');
+                  }} 
+                  className="btn btn-secondary"
+                >
+                  Clear Filters
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-lg font-medium text-white mb-2">No datasets yet</h3>
+                <p className="text-zinc-500 mb-6">Create a dataset to define test variables and values</p>
+                <button onClick={() => setShowCreateModal(true)} className="btn btn-primary">
+                  Create Your First Dataset
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
