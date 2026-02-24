@@ -146,6 +146,8 @@ export default function DatasetsPage() {
   const [datasets, setDatasets] = useState<Dataset[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     fetchDatasets();
@@ -174,6 +176,23 @@ export default function DatasetsPage() {
     } catch (error) {
       console.error('Failed to create dataset:', error);
     }
+  };
+
+  // Pagination calculations
+  const totalPages = Math.ceil(datasets.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const paginatedDatasets = datasets.slice(startIndex, endIndex);
+
+  // Reset to first page when page size changes
+  const handlePageSizeChange = (newSize: number) => {
+    setPageSize(newSize);
+    setCurrentPage(1);
+  };
+
+  // Navigate to specific page
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
   };
 
   if (loading) {
@@ -223,34 +242,94 @@ export default function DatasetsPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {datasets.map((dataset) => (
-              <div key={dataset.id} className="card p-6 hover:border-blue-600 transition-colors cursor-pointer">
-                <h3 className="text-lg font-semibold text-white mb-2">{dataset.name}</h3>
-                {dataset.description && (
-                  <p className="text-sm text-zinc-400 mb-4">{dataset.description}</p>
-                )}
-                <div className="flex gap-4 text-sm">
-                  <div>
-                    <span className="text-zinc-500">Variables:</span>
-                    <span className="text-white ml-1 data-value">{dataset.variables.length}</span>
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {paginatedDatasets.map((dataset) => (
+                <div key={dataset.id} className="card p-6 hover:border-blue-600 transition-colors cursor-pointer">
+                  <h3 className="text-lg font-semibold text-white mb-2">{dataset.name}</h3>
+                  {dataset.description && (
+                    <p className="text-sm text-zinc-400 mb-4">{dataset.description}</p>
+                  )}
+                  <div className="flex gap-4 text-sm">
+                    <div>
+                      <span className="text-zinc-500">Variables:</span>
+                      <span className="text-white ml-1 data-value">{dataset.variables.length}</span>
+                    </div>
+                    <div>
+                      <span className="text-zinc-500">Rows:</span>
+                      <span className="text-white ml-1 data-value">{dataset.rows.length}</span>
+                    </div>
                   </div>
-                  <div>
-                    <span className="text-zinc-500">Rows:</span>
-                    <span className="text-white ml-1 data-value">{dataset.rows.length}</span>
+                  <div className="mt-4 flex flex-wrap gap-1">
+                    {dataset.variables.slice(0, 3).map((v) => (
+                      <span key={v} className="badge badge-info text-xs">{v}</span>
+                    ))}
+                    {dataset.variables.length > 3 && (
+                      <span className="badge badge-info text-xs">+{dataset.variables.length - 3}</span>
+                    )}
                   </div>
                 </div>
-                <div className="mt-4 flex flex-wrap gap-1">
-                  {dataset.variables.slice(0, 3).map((v) => (
-                    <span key={v} className="badge badge-info text-xs">{v}</span>
-                  ))}
-                  {dataset.variables.length > 3 && (
-                    <span className="badge badge-info text-xs">+{dataset.variables.length - 3}</span>
-                  )}
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            {datasets.length > 0 && (
+              <div className="mt-8 flex items-center justify-between">
+                {/* Page size selector */}
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-zinc-500">Items per page:</span>
+                  <div className="flex gap-2">
+                    {[10, 25, 50].map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => handlePageSizeChange(size)}
+                        className={`px-3 py-1 text-sm transition-colors ${
+                          pageSize === size
+                            ? 'bg-[var(--accent-primary)] text-white'
+                            : 'bg-white text-[var(--foreground)] border border-[var(--border)] hover:bg-[var(--background)]'
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Page navigation */}
+                <div className="flex items-center gap-4">
+                  {/* Previous button */}
+                  <button
+                    onClick={() => goToPage(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Previous
+                  </button>
+
+                  {/* Page indicator: Page X of Y */}
+                  <span className="text-sm text-[var(--foreground-muted)]" aria-label={`Page ${currentPage} of ${totalPages}`}>
+                    Page <span className="text-[var(--foreground)] font-medium data-value">{currentPage}</span> of{' '}
+                    <span className="text-[var(--foreground)] font-medium data-value">{totalPages}</span>
+                  </span>
+
+                  {/* Next button */}
+                  <button
+                    onClick={() => goToPage(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="btn btn-secondary disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    Next
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="square" strokeLinejoin="miter" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
 
         <CreateDatasetModal
