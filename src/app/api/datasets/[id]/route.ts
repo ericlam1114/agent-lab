@@ -186,6 +186,8 @@ export async function DELETE(
   try {
     const db = initDb();
     const { id } = await params;
+    const searchParams = request.nextUrl.searchParams;
+    const taskId = searchParams.get('taskId');
 
     // Check if dataset exists
     const existing = await db.select()
@@ -200,16 +202,40 @@ export async function DELETE(
       );
     }
 
-    // Delete dataset (rows will cascade)
+    // If taskId is provided, delete a single row from the dataset
+    if (taskId) {
+      // Delete the specific row
+      await db.delete(datasetRows)
+        .where(eq(datasetRows.id, taskId));
+
+      // Update row count
+      const remainingRows = await db.select()
+        .from(datasetRows)
+        .where(eq(datasetRows.datasetId, id));
+
+      await db.update(datasets)
+        .set({
+          rowCount: remainingRows.length,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(datasets.id, id));
+
+      return NextResponse.json({
+        success: true,
+        deletedTaskId: taskId,
+      });
+    }
+
+    // Delete entire dataset (rows will cascade)
     await db.delete(datasets).where(eq(datasets.id, id));
 
     return NextResponse.json({
       message: 'Dataset deleted successfully',
     });
   } catch (error) {
-    console.error('Error deleting dataset:', error);
+    console.error('Error deleting from dataset:', error);
     return NextResponse.json(
-      { error: 'Failed to delete dataset' },
+      { error: 'Failed to delete from dataset' },
       { status: 500 }
     );
   }
